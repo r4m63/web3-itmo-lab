@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<h:head>
+    <title>Лабораторная работа 3</title>
+</h:head>
+
+<h:body style="background-color: #333333;">
+
+    <div style="display: flex; justify-content: center; align-items: center">
+        <p style="color: #fff; font-size: 16px; font-family: Calibri;">Таджеддинов Рамиль P3208 Web 3</p>
+    </div>
+
+    <div style="display: flex; justify-content: space-evenly; align-items: center;">
+
+        <h:panelGroup id="graph-container" styleClass="graph-container">
+            <svg id="graph" xmlns="http://www.w3.org/2000/svg" width="500" height="500">
+                <polygon id="triangle" points="250,250 #{250 - areaCheck.r * 40},250 250,#{250 - areaCheck.r * 40 / 2}"
+                         fill="#122028" fill-opacity="0.6"/>
+                <rect id="rectangle" x="#{250 - areaCheck.r * 20}" y="250" width="#{areaCheck.r * 20}"
+                      height="#{areaCheck.r * 40}" fill="#122028" fill-opacity="0.6"/>
+                <path id="circle" fill="#122028" fill-opacity="0.6" d="
+                                    M 250 250
+                                    L #{250 + areaCheck.r * 40} 250
+                                    A #{40 * areaCheck.r} #{40 * areaCheck.r} 0 0 0 #{250} #{250 - areaCheck.r * 40}"/>
+                <ui:repeat value="#{areaCheck.points}" var="point">
+                    <circle r="5"
+                            cx="#{point.x * 40 + 250}"
+                            cy="#{- point.y * 40 + 250}"
+                            fill="#{point.hit ? 'green' : 'red'}"/>
+                </ui:repeat>
+                <!--X line-->
+                <line x1="0" y1="250" x2="500" y2="250" stroke="#FFFFFF"/>
+                <!--Y line-->
+                <line x1="250" y1="0" x2="250" y2="500" stroke="#FFFFFF"/>
+                <!-- -->
+                <line x1="210" y1="248" x2="210" y2="252" stroke="#FFFFFF"/> <!-- -1 point on x -->
+                <line x1="290" y1="248" x2="290" y2="252" stroke="#FFFFFF"/> <!-- 1 point on x -->
+                <text x="205" y="240" fill="#FFFFFF">-1</text> <!-- '-1' on x -->
+                <text x="285" y="240" fill="#FFFFFF">1</text> <!-- '1' on x -->
+                <!-- -->
+                <line x1="170" y1="248" x2="170" y2="252" stroke="#FFFFFF"/> <!-- -2 point on x -->
+                <line x1="330" y1="248" x2="330" y2="252" stroke="#FFFFFF"/> <!-- 2 point on x -->
+                <text x="165" y="240" fill="#FFFFFF">-2</text> <!-- '-2' on x -->
+                <text x="325" y="240" fill="#FFFFFF">2</text> <!-- '2' on x -->
+                <!-- -->
+                <line x1="130" y1="248" x2="130" y2="252" stroke="#FFFFFF"/> <!-- -3 point on x -->
+                <line x1="370" y1="248" x2="370" y2="252" stroke="#FFFFFF"/> <!-- 3 point on x -->
+                <text x="125" y="240" fill="#FFFFFF">-3</text> <!-- '-3' on x -->
+                <text x="365" y="240" fill="#FFFFFF">3</text> <!-- '3' on x -->
+                <!-- -->
+                <line x1="90" y1="248" x2="90" y2="252" stroke="#FFFFFF"/> <!-- -4 point on x -->
+                <line x1="410" y1="248" x2="410" y2="252" stroke="#FFFFFF"/> <!-- 4 point on x -->
+                <text x="85" y="240" fill="#FFFFFF">-4</text> <!-- '-4' on x -->
+                <text x="405" y="240" fill="#FFFFFF">4</text> <!-- '4' on x -->
+                <!-- -->
+                <line x1="50" y1="248" x2="50" y2="252" stroke="#FFFFFF"/> <!-- -5 point on x -->
+                <line x1="450" y1="248" x2="450" y2="252" stroke="#FFFFFF"/> <!-- 5 point on x -->
+                <text x="45" y="240" fill="#FFFFFF">-5</text> <!-- '-5' on x -->
+                <text x="445" y="240" fill="#FFFFFF">5</text> <!-- '5' on x -->
+                <!-- -->
+                <line x1="248" y1="210" x2="252" y2="210" stroke="#FFFFFF"/> <!-- 1 on y -->
+                <line x1="248" y1="290" x2="252" y2="290" stroke="#FFFFFF"/> <!-- -1 on y -->
+                <text x="256" y="215" fill="#FFFFFF">1</text> <!-- 1 on y -->
+                <text x="256" y="295" fill="#FFFFFF">-1</text> <!-- -1 on y -->
+                <!-- -->
+                <line x1="248" y1="170" x2="252" y2="170" stroke="#FFFFFF"/> <!-- 2 on y -->
+                <line x1="248" y1="330" x2="252" y2="330" stroke="#FFFFFF"/> <!-- -2 on y -->
+                <text x="256" y="175" fill="#FFFFFF">2</text> <!-- 2 on y -->
+                <text x="256" y="335" fill="#FFFFFF">-2</text> <!-- -2 on y -->
+                <!-- -->
+                <line x1="248" y1="130" x2="252" y2="130" stroke="#FFFFFF"/> <!-- 3 on y -->
+                <line x1="248" y1="370" x2="252" y2="370" stroke="#FFFFFF"/> <!-- -3 on y -->
+                <text x="256" y="135" fill="#FFFFFF">3</text> <!-- 3 on y -->
+                <text x="256" y="375" fill="#FFFFFF">-3</text> <!-- -3 on y -->
+                <!-- -->
+                <line x1="248" y1="90" x2="252" y2="90" stroke="#FFFFFF"/> <!-- 4 on y -->
+                <line x1="248" y1="410" x2="252" y2="410" stroke="#FFFFFF"/> <!-- -4 on y -->
+                <text x="256" y="95" fill="#FFFFFF">4</text> <!-- 4 on y -->
+                <text x="256" y="415" fill="#FFFFFF">-4</text> <!-- -4 on y -->
+                <!-- -->
+                <line x1="248" y1="50" x2="252" y2="50" stroke="#FFFFFF"/> <!-- 5 on y -->
+                <line x1="248" y1="450" x2="252" y2="450" stroke="#FFFFFF"/> <!-- -5 on y -->
+                <text x="256" y="55" fill="#FFFFFF">5</text> <!-- 3 on y -->
+                <text x="256" y="455" fill="#FFFFFF">-5</text> <!-- -3 on y -->
+                <!-- arrows -->
+                <polygon points="250,0 255,5 245, 5" fill="#FFFFFF" stroke="#FFFFFF"/>
+                <polygon points="500, 250 495,245 495,255" fill="#FFFFFF" stroke="#FFFFFF"/>
+            </svg>
+        </h:panelGroup>
+
+        <h:outputScript>
+            let rotationAngle = 0;
+
+            function rotateGraph() {
+                rotationAngle += 15; // Увеличиваем угол поворота на 15 градусов
+                const svg = document.getElementById('graph');
+                if (svg) {
+                    svg.style.transform = `rotate(${rotationAngle}deg)`; // Применяем поворот
+                    svg.style.transformOrigin = 'center'; // Центрируем поворот
+                }
+            }
+
+            // Запускаем поворот каждые 1 секунд
+            setInterval(rotateGraph, 1000);
+
+            // Повторная инициализация после AJAX обновления
+            function reinitializeAnimation() {
+                rotateGraph(); // Обновляем поворот, если необходимо
+            }
+        </h:outputScript>
+
+
+        <div class="tables-container">
+            <h:form id="areaForm">
+                <p:messages id="messages" autoUpdate="true" style="color:red"/>
+
+                <table>
+                    <tr>
+                        <!-- X -->
+                        <td style="color: white">X:</td>
+                        <td>
+                            <ui:repeat var="xValue" value="#{areaCheck.XValues}">
+                                <p:commandButton type="button" value="#{xValue}"
+                                                 style="
+                                         background-color: white;
+                                         border-color: black;
+                                         color: black;
+                                         margin: 5px;">
+                                    <f:ajax render="x" listener="#{areaCheck.setX(xValue)}"/>
+                                </p:commandButton>
+                            </ui:repeat>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <!-- Y -->
+                        <td style="color: white">Y:</td>
+                        <td>
+                            <p:inputText id="y" value="#{areaCheck.y}" required="true"
+                                         placeholder="введите число от -5 до 5" widgetVar="yText">
+                                <f:validateDoubleRange minimum="-5" maximum="5"
+                                                       errorMessage="Значение Y должно быть в диапазоне от -5 до 5."/>
+                            </p:inputText>
+                            <p:message for="y" style="color:red"
+                                       errorMessage="Значение Y должно быть в диапазоне от -5 до 5."/>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <!-- R -->
+                        <td style="color: white">R:</td>
+                        <td>
+                            <p:selectOneMenu id="r" value="#{areaCheck.r}" var="r" widgetVar="rMenu">
+                                <f:selectItem itemValue="1" itemLabel="1"/>
+                                <f:selectItem itemValue="2" itemLabel="2"/>
+                                <f:selectItem itemValue="3" itemLabel="3"/>
+                                <f:selectItem itemValue="4" itemLabel="4"/>
+                                <f:selectItem itemValue="5" itemLabel="5"/>
+                                <p:ajax update="graph-container" process="@this r" oncomplete="handleClick()"/>
+                            </p:selectOneMenu>
+                        </td>
+                    </tr>
+                </table>
+
+                <div style="text-align: center; justify-content: flex-start">
+                    <p:commandButton value="Проверить" type="submit" action="#{areaCheck.submit()}"
+                                     update="graph-container resultTable messages" oncomplete="handleClick()"
+                                     styleClass="switch-button"
+                                     style="
+                             background-color: white;
+                             border-color: black;
+                             color: black;
+                             margin: 5px;"/>
+                    <p:button value="Стартовая страница" outcome="start.xhtml" styleClass="switch-button"
+                              style="
+                      background-color: white;
+                      border-color: black;
+                      color: black;
+                      margin: 5px;"/>
+                    <p:commandButton value="Очистить" action="#{areaCheck.clear()}" ajax="true"
+                                     update="resultTable graph-container data-form messages" process="@this"
+                                     oncomplete="handleClick()" styleClass="switch-button"
+                                     style="
+                             background-color: white;
+                             border-color: black;
+                             color: black;
+                             margin: 5px;"/>
+                </div>
+            </h:form>
+            <h:form id="hiddenForm" style="display: none">
+                <p:inputText id="hiddenX" value="#{areaCheck.x}" required="true"/>
+                <p:inputText id="hiddenY" value="#{areaCheck.y}" required="true"/>
+                <p:inputText id="hiddenR" value="#{areaCheck.r}" required="true"/>
+                <h:commandButton id="hiddenSubmit" type="submit" action="#{areaCheck.submit()}"
+                                 update="graph-container"/>
+            </h:form>
+        </div>
+    </div>
+
+
+    <p:dataTable id="resultTable" value="#{areaCheck.points}" var="point"
+                 styleClass="custom-table">
+        <p:column headerText="X">
+            <h:outputText value="#{point.x}"/>
+        </p:column>
+        <p:column headerText="Y">
+            <h:outputText value="#{point.y}"/>
+        </p:column>
+        <p:column headerText="R">
+            <h:outputText value="#{point.r}"/>
+        </p:column>
+        <p:column headerText="Результат">
+            <h:outputText value="#{point.hit}"/>
+        </p:column>
+        <p:column headerText="Дата">
+            <h:outputText value="#{point.hitTime}"/>
+        </p:column>
+    </p:dataTable>
+    <style>
+        .custom-table {
+            background-color: #333333 !important;
+            color: white !important;
+            border: 1px solid white;
+        }
+
+        .custom-table th, .custom-table td {
+            color: white !important;
+            background-color: #333333 !important;
+        }
+    </style>
+    <script type="text/javascript" src="script.js"/>
+</h:body>
+</html>
