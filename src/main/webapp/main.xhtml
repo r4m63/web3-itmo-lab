@@ -93,27 +93,6 @@
             </svg>
         </h:panelGroup>
 
-        <h:outputScript>
-            let rotationAngle = 0;
-
-            function rotateGraph() {
-                rotationAngle += 15; // Увеличиваем угол поворота на 15 градусов
-                const svg = document.getElementById('graph');
-                if (svg) {
-                    svg.style.transform = `rotate(${rotationAngle}deg)`; // Применяем поворот
-                    svg.style.transformOrigin = 'center'; // Центрируем поворот
-                }
-            }
-
-            // Запускаем поворот каждые 1 секунд
-            setInterval(rotateGraph, 1000);
-
-            // Повторная инициализация после AJAX обновления
-            function reinitializeAnimation() {
-                rotateGraph(); // Обновляем поворот, если необходимо
-            }
-        </h:outputScript>
-
 
         <div class="tables-container">
             <h:form id="areaForm">
