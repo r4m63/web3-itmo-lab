@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.TextStyle;
 import java.util.Locale;
 
@@ -28,6 +29,10 @@ public class ClockBean implements Serializable {
 
     public String getTime() {
         return String.format("%02d : %02d : %02d", dateTime.getHour(), dateTime.getMinute(), dateTime.getSecond());
+    }
+
+    public int getCurrentRotationAngle() {
+        return LocalTime.now().getMinute() * 6;
     }
 }
 
