@@ -38,13 +38,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // Проверяем, что график существует
         if (!graph) return;
 
-        // Преобразуем координаты клика в систему графика
+        // Получаем координаты клика относительно графика
         const rect = graph.getBoundingClientRect();
         const svgX = e.clientX - rect.left; // Координаты клика относительно SVG
         const svgY = e.clientY - rect.top;
 
-        const x = (svgX - 250) / 40; // Преобразование координат в систему графика
-        const y = (250 - svgY) / 40;
+        // Преобразуем координаты в систему графика с учётом отступов и масштаба
+        const x = (svgX - rect.width / 2) / 40; // Преобразование координат в систему графика
+        const y = (rect.height / 2 - svgY) / 40;
 
         // Трансформируем координаты с учётом угла поворота
         const {x: transformedX, y: transformedY} = transformCoordinates(x, y);
