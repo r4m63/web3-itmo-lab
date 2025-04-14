@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="lab3" basedir="." default="build-war">
+
+    <!-- Properties -->
+    <property name="src.dir" location="src/main/java"/>
+    <property name="resources.dir" location="src/main/resources"/>
+    <property name="web.dir" location="src/main/webapp"/>
+    <property name="build.dir" location="build"/>
+    <property name="classes.dir" location="${build.dir}/classes"/>
+    <property name="lib.dir" location="lib"/>
+    <property name="war.file" value="lab3.war"/>
+
+    <!-- Явное указание пути к JDK 17 (Corretto) -->
+    <property name="java.home" value="/Users/ramiltadzheddinov/Library/Java/JavaVirtualMachines/corretto-17.0.14/Contents/Home"/>
+    <property name="javac.executable" value="${java.home}/bin/javac"/>
+    <!-- Проверка существования javac -->
+    <available file="${javac.executable}" property="javac.exists"/>
+    <fail unless="javac.exists">
+        Javac not found at ${javac.executable}!
+        Please check JDK installation path.
+    </fail>
+
+    <!-- Classpath -->
+    <path id="compile.classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+
+    <!-- Targets -->
+    <target name="init">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${lib.dir}"/>
+    </target>
+
+    <!-- Download dependencies -->
+    <target name="download-deps" depends="init">
+        <!-- Создаем временную директорию для загрузок -->
+        <mkdir dir="${lib.dir}/temp"/>
+
+        <!-- Основные зависимости -->
+
+        <!-- Jakarta EE Web API -->
+        <get src="https://repo1.maven.org/maven2/jakarta/platform/jakarta.jakartaee-web-api/9.0.0/jakarta.jakartaee-web-api-9.0.0.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <get src="https://repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.13.0/antlr4-runtime-4.13.0.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- PrimeFaces -->
+        <get src="https://repo1.maven.org/maven2/org/primefaces/primefaces/14.0.6/primefaces-14.0.6-jakarta.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- PrimeFaces Themes -->
+        <get src="https://repo1.maven.org/maven2/org/primefaces/themes/all-themes/1.1.0/all-themes-1.1.0.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- PrimeFlex -->
+        <get src="https://repo1.maven.org/maven2/org/webjars/npm/primeflex/3.3.1/primeflex-3.3.1.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- PrimeIcons -->
+        <get src="https://repo1.maven.org/maven2/org/webjars/npm/primeicons/7.0.0/primeicons-7.0.0.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- Hibernate Core -->
+<!--        Не скачивается-->
+        <get src="https://repo1.maven.org/maven2/org/hibernate/orm/hibernate-core/6.6.1.Final/hibernate-core-6.6.1.Final.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true" ignoreerrors="true"/>
+
+        <!-- Транзитивные зависимости Hibernate -->
+        <get src="https://repo1.maven.org/maven2/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/jakarta/persistence/jakarta.persistence-api/3.1.0/jakarta.persistence-api-3.1.0.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/org/hibernate/common/hibernate-commons-annotations/6.0.6.Final/hibernate-commons-annotations-6.0.6.Final.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/net/bytebuddy/byte-buddy/1.14.11/byte-buddy-1.14.11.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/org/jboss/spec/javax/transaction/jboss-transaction-api_1.3_spec/2.0.0.Final/jboss-transaction-api_1.3_spec-2.0.0.Final.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/com/fasterxml/classmate/1.5.1/classmate-1.5.1.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- PostgreSQL JDBC -->
+        <get src="https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- Logback -->
+        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.3.12/logback-classic-1.3.12.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.3.12/logback-core-1.3.12.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- Lombok -->
+        <get src="https://repo1.maven.org/maven2/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- JUnit 5 (для тестов) -->
+        <get src="https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+
+        <!-- Копируем скачанные файлы в основную директорию lib -->
+        <copy todir="${lib.dir}">
+            <fileset dir="${lib.dir}/temp"/>
+        </copy>
+
+        <!-- Удаляем временную директорию -->
+        <delete dir="${lib.dir}/temp"/>
+    </target>
+
+    <!-- Compile Java sources -->
+    <!-- depends="init,download-deps" -->
+    <target name="compile" depends="download-deps">
+        <!-- Проверка наличия исходников -->
+        <available property="src.exists" file="${src.dir}"/>
+        <fail unless="src.exists" message="Source directory ${src.dir} not found!"/>
+
+        <!-- Компиляция с явным указанием выходного каталога -->
+        <javac srcdir="${src.dir}"
+               destdir="${classes.dir}"
+               includeantruntime="false"
+               source="17"
+               target="17"
+               encoding="UTF-8"
+               debug="true"
+               fork="true"
+               executable="${javac.executable}">
+
+            <classpath refid="compile.classpath"/>
+            <compilerarg line="-Xlint:unchecked -parameters"/>
+        </javac>
+
+        <!-- Копирование ресурсов с проверкой -->
+        <copy todir="${classes.dir}" preservelastmodified="true">
+            <fileset dir="${resources.dir}" includes="**/*" excludes="**/*.java"/>
+        </copy>
+    </target>
+
+    <!-- Build WAR with proper structure -->
+    <target name="build-war" depends="compile">
+
+        <war destfile="${build.dir}/${war.file}"
+             webxml="${web.dir}/WEB-INF/web.xml"
+             needxmlfile="false">
+
+            <fileset dir="${web.dir}" excludes="WEB-INF/web.xml"/>
+            <lib dir="${lib.dir}" excludes="**/*.properties"/>
+            <classes dir="${classes.dir}" excludes="**/package-info.class"/>
+        </war>
+    </target>
+
+    <!-- Clean -->
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${lib.dir}"/>
+    </target>
+
+</project>

@@ -1,7 +1,8 @@
 package server;
 
 import jakarta.annotation.PreDestroy;
-import jakarta.ejb.Stateless;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
 import jakarta.persistence.*;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -13,7 +14,8 @@ import server.models.Point;
 import java.io.Serializable;
 import java.util.List;
 
-@Stateless
+@Singleton
+@Startup
 public class DatabaseManager implements Serializable {
 
     private final SessionFactory sessionFactory;
