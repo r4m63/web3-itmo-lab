@@ -377,7 +377,7 @@
     </target>
 
     <target name="diff" depends="init-antcontrib" description="Check changes and commit to feature branch">
-        <!-- 1. Get changed files -->
+
         <exec executable="git" outputproperty="git.diff.files">
             <arg value="diff"/>
             <arg value="--name-only"/>
@@ -385,12 +385,10 @@
         </exec>
         <echo message="Changed files: ${git.diff.files}"/>
 
-        <!-- 2. Check for critical changes -->
         <condition property="critical.changes.detected">
             <contains string="${git.diff.files}" substring="${diff.critical.classes}"/>
         </condition>
 
-        <!-- 3. Commit logic -->
         <if>
             <isset property="critical.changes.detected"/>
             <then>
@@ -420,8 +418,88 @@
         </exec>
     </target>
 
+    <target name="history" depends="init-antcontrib" description="Roll back through history until successful build">
+        <!-- Инициализация свойств -->
+        <property name="build.success" value="false"/>
+        <property name="max.attempts" value="2"/>
+        <property name="history.file" value="${dir.build}/history_diff.txt"/>
 
-    <!-- history, diff, env-stop -->
+        <!-- Создаем файл для хранения истории -->
+        <delete file="${history.file}"/>
+        <touch file="${history.file}"/>
+
+        <echo message="Starting historical build search..." level="info"/>
+
+        <!-- Основной цикл проверки -->
+        <for param="attempt" list="1,2" delimiter=",">
+            <sequential>
+                <if>
+                    <equals arg1="${build.success}" arg2="false"/>
+                    <then>
+                        <echo message="Attempt ${attempt}: Trying to compile..."/>
+
+                        <!-- Пробуем скомпилировать -->
+                        <trycatch>
+                            <try>
+                                <antcall target="compile"/>
+                                <property name="compile.failed" value="false"/>
+                            </try>
+                            <catch>
+                                <property name="compile.failed" value="true"/>
+                                <echo message="Compilation failed in attempt ${attempt}" level="warning"/>
+                            </catch>
+                        </trycatch>
+
+                        <if>
+                            <equals arg1="${compile.failed}" arg2="true"/>
+                            <then>
+                                <!-- Откатываемся на одну ревизию -->
+                                <exec executable="git" failonerror="true">
+                                    <arg value="reset"/>
+                                    <arg value="--hard"/>
+                                    <arg value="HEAD~1"/>
+                                </exec>
+                            </then>
+                            <else>
+                                <!-- Успешная компиляция -->
+                                <property name="build.success" value="true"/>
+                                <echo message="Successful build found!" level="info"/>
+
+                                <!-- Получаем хэш текущей ревизии -->
+                                <exec executable="git" outputproperty="current.revision">
+                                    <arg value="rev-parse"/>
+                                    <arg value="HEAD"/>
+                                </exec>
+
+                                <!-- Получаем diff с предыдущей ревизией -->
+                                <exec executable="git" output="${history.file}">
+                                    <arg value="show"/>
+                                    <arg value="${current.revision}~1..${current.revision}"/>
+                                </exec>
+
+                                <echo message="Diff saved to ${history.file}" level="info"/>
+                            </else>
+                        </if>
+                    </then>
+                    <else>
+                        <echo message="Build already succeeded - skipping remaining attempts" level="info"/>
+                    </else>
+                </if>
+            </sequential>
+        </for>
+
+        <!-- Проверка, если ни одна ревизия не скомпилировалась -->
+        <if>
+            <equals arg1="${build.success}" arg2="false"/>
+            <then>
+                <echo message="No working revisions found in ${max.attempts} attempts!" level="error"/>
+                <fail message="Project cannot be compiled in any recent revision"/>
+            </then>
+        </if>
+    </target>
+
+
+    <!-- history, env-stop -->
 
 
 </project>
