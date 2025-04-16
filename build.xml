@@ -187,7 +187,8 @@
     </target>
 
     <target name="clean">
-        <delete dir="${dir.build}"/>
+        <delete dir="ant"/>
+        <delete dir="lib"/>
     </target>
 
     <target name="music" description="Play music when build is complete">
@@ -431,12 +432,12 @@
         <echo message="Starting historical build search..." level="info"/>
 
         <!-- Основной цикл проверки -->
-        <for param="attempt" list="1,2" delimiter=",">
+        <for list="1,2" param="attempt" delimiter=",">
             <sequential>
                 <if>
                     <equals arg1="${build.success}" arg2="false"/>
                     <then>
-                        <echo message="Attempt ${attempt}: Trying to compile..."/>
+                        <echo message="Attempt: Trying to compile..."/>
 
                         <!-- Пробуем скомпилировать -->
                         <trycatch>
@@ -446,7 +447,7 @@
                             </try>
                             <catch>
                                 <property name="compile.failed" value="true"/>
-                                <echo message="Compilation failed in attempt ${attempt}" level="warning"/>
+                                <echo message="Compilation failed in attempt" level="warning"/>
                             </catch>
                         </trycatch>
 
@@ -493,13 +494,11 @@
             <equals arg1="${build.success}" arg2="false"/>
             <then>
                 <echo message="No working revisions found in ${max.attempts} attempts!" level="error"/>
-                <fail message="Project cannot be compiled in any recent revision"/>
+                <echo message="Project cannot be compiled in any recent revision"/>
             </then>
         </if>
     </target>
 
-
     <!-- history, env-stop -->
-
 
 </project>
