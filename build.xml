@@ -297,6 +297,47 @@
         </exec>
     </target>
 
+    <target name="env-stop" depends="init-antcontrib" description="Stop WildFly and Docker containers">
+        <!-- Остановка WildFly -->
+        <available property="wildfly.exists" file="${wildfly.home}"/>
+        <if>
+            <isset property="wildfly.exists"/>
+            <then>
+                <echo message="Stopping WildFly server..."/>
+                <exec executable="${wildfly.home}/bin/jboss-cli.sh" osfamily="unix" failonerror="false">
+                    <arg value="--connect"/>
+                    <arg value="command=:shutdown"/>
+                </exec>
+                <echo message="WildFly server stopped"/>
+            </then>
+            <else>
+                <echo message="WildFly not found at ${wildfly.home}, skipping..."/>
+            </else>
+        </if>
+
+        <!-- Остановка Docker -->
+        <available property="docker.exists" file="${docker.home}"/>
+        <if>
+            <isset property="docker.exists"/>
+            <then>
+                <echo message="Stopping Docker containers..."/>
+                <exec executable="docker-compose" dir="${basedir}" failonerror="false">
+                    <arg value="down"/>
+                </exec>
+                <echo message="Docker containers stopped and removed"/>
+            </then>
+            <else>
+                <echo message="Docker not found at ${docker.home}, skipping..."/>
+            </else>
+        </if>
+
+        <!-- Дополнительная проверка процессов -->
+        <exec executable="pkill" osfamily="unix" failonerror="false">
+            <arg value="-f"/>
+            <arg value="standalone.sh"/>
+        </exec>
+    </target>
+
     <fileset id="areabean.fileset" dir="${dir.build.alt.src}">
         <include name="**/AreaBean.java"/>
     </fileset>
@@ -368,7 +409,7 @@
     </target>
 
     <target name="init-antcontrib">
-        <mkdir dir="lib"/>
+        <!-- <mkdir dir="lib"/>-->
         <get src="https://repo1.maven.org/maven2/ant-contrib/ant-contrib/1.0b3/ant-contrib-1.0b3.jar"
              dest="lib/ant-contrib-1.0b3.jar"
              verbose="true"
@@ -498,7 +539,5 @@
             </then>
         </if>
     </target>
-
-    <!-- history, env-stop -->
 
 </project>
