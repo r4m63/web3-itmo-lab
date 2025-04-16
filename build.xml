@@ -8,6 +8,69 @@
         <fileset dir="${lib.dir}" includes="**/*.jar"/>
     </path>
 
+    <path id="test.classpath">
+        <path refid="compile.classpath"/>
+        <fileset dir="${lib.dir}">
+            <include name="junit-jupiter-api-${junit.version}.jar"/>
+            <include name="junit-jupiter-engine-${junit.version}.jar"/>
+            <include name="junit-platform-commons-${junit.platform.version}.jar"/>
+            <include name="junit-platform-engine-${junit.platform.version}.jar"/>
+            <include name="junit-platform-console-standalone-${junit.platform.version}.jar"/>
+            <include name="apiguardian-api-1.1.2.jar"/>
+            <include name="opentest4j-1.2.0.jar"/>
+        </fileset>
+        <pathelement location="${build.dir}/classes"/>
+        <pathelement location="${build.dir}/test-classes"/>
+    </path>
+
+    <target name="download-test-libs">
+        <mkdir dir="${lib.dir}"/>
+        <get src="https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/${junit.version}/junit-jupiter-api-${junit.version}.jar"
+             dest="${lib.dir}" verbose="true"/>
+        <get src="https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-engine/${junit.version}/junit-jupiter-engine-${junit.version}.jar"
+             dest="${lib.dir}" verbose="true"/>
+        <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-commons/${junit.platform.version}/junit-platform-commons-${junit.platform.version}.jar"
+             dest="${lib.dir}" verbose="true"/>
+        <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-engine/${junit.platform.version}/junit-platform-engine-${junit.platform.version}.jar"
+             dest="${lib.dir}" verbose="true"/>
+        <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/${junit.platform.version}/junit-platform-console-standalone-${junit.platform.version}.jar"
+             dest="${lib.dir}" verbose="true"/>
+        <get src="https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar"
+             dest="${lib.dir}" verbose="true"/>
+        <get src="https://repo1.maven.org/maven2/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar"
+             dest="${lib.dir}" verbose="true"/>
+    </target>
+
+    <target name="test" depends="download-test-libs" description="Run JUnit 5 tests">
+        <mkdir dir="${build.dir}/test-classes"/>
+        <mkdir dir="${test.reports.dir}"/>
+
+        <!-- Компиляция тестов -->
+        <javac srcdir="${test.src.dir}"
+               destdir="${build.dir}/test-classes"
+               includeantruntime="false"
+               classpathref="test.classpath"
+               release="17"/>
+
+        <!-- Проверка classpath перед запуском -->
+        <pathconvert property="test.classpath.string" refid="test.classpath"/>
+        <echo message="Test Classpath: ${test.classpath.string}"/>
+
+        <!-- Запуск тестов через ConsoleLauncher -->
+        <java classname="org.junit.platform.console.ConsoleLauncher"
+              classpathref="test.classpath"
+              fork="true"
+              failonerror="true">
+            <arg value="--class-path"/>
+            <arg path="${build.dir}/test-classes:${build.dir}/classes"/>
+            <arg value="--scan-class-path"/>
+            <arg value="--include-classname"/>
+            <arg value=".*Test"/>
+            <arg value="--reports-dir"/>
+            <arg path="${test.reports.dir}"/>
+        </java>
+    </target>
+
     <target name="scp" description="Перемещение собранного проекта по SCP">
         <scp file="${build.dir}/${war.file}"
              todir="${scp.username}@${scp.host}:${scp.remotedir}"
@@ -55,17 +118,13 @@
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar"
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar"
+        <get src="https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar"
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/com/jcraft/jsch/0.1.54/jsch-0.1.54.jar"
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/apache/ant/ant-jsch/1.10.14/ant-jsch-1.10.14.jar"
+             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+        <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/2.0.9/slf4j-simple-2.0.9.jar"
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
         <copy todir="${lib.dir}">
             <fileset dir="${lib.dir}/temp"/>
@@ -161,59 +220,7 @@
         </jar>
     </target>
 
-    <target name="start-env" description="Start environment: DB, server, deploy WAR, open web">
-
-        <!-- 1. Запуск контейнера PostgreSQL -->
-        <!--        <exec executable="docker" failonerror="true">-->
-        <!--            <arg value="run"/>-->
-        <!--            <arg value="&#45;&#45;rm"/>-->
-        <!--            <arg value="-d"/>-->
-        <!--            <arg value="&#45;&#45;name"/>-->
-        <!--            <arg value="my-postgres"/>-->
-        <!--            <arg value="-e"/>-->
-        <!--            <arg value="POSTGRES_PASSWORD=postgres"/>-->
-        <!--            <arg value="-p"/>-->
-        <!--            <arg value="5432:5432"/>-->
-        <!--            <arg value="postgres:15"/>-->
-        <!--        </exec>-->
-
-        <!-- 2. Запуск standalone.sh (WildFly / JBoss) -->
-        <exec executable="${wildfly.home}/bin/standalone.sh" osfamily="unix" spawn="true"/>
-        <exec executable="${wildfly.home}/bin/standalone.bat" osfamily="windows" spawn="true"/>
-
-        <!-- 3. Копирование .war файла в папку deployments -->
-        <copy file="${build.dir}/${war.file}"
-              todir="${wildfly.home}/standalone/deployments"
-              overwrite="true"/>
-
-        <!-- 4. Открытие веб-браузера -->
-        <condition property="isWindows">
-            <os family="windows"/>
-        </condition>
-        <condition property="isMac">
-            <os family="mac"/>
-        </condition>
-
-        <!-- Windows -->
-        <exec executable="cmd" osfamily="windows" failonerror="false">
-            <arg value="/c"/>
-            <arg value="start"/>
-            <arg value="http://localhost:8080/${project.context}"/>
-        </exec>
-
-        <!-- macOS -->
-        <exec executable="open" osfamily="mac" failonerror="false">
-            <arg value="http://localhost:8080/${project.context}"/>
-        </exec>
-
-        <!-- Linux -->
-        <!--        <exec executable="xdg-open" osfamily="unix" failonerror="false">-->
-        <!--            <arg value="http://localhost:8080/${project.context}"/>-->
-        <!--        </exec>-->
-
-    </target>
-
-    <!-- test, native2ascii, history, diff, env, alt  -->
+    <!-- native2ascii, history, diff, alt  -->
 
     <target name="env" description="Deploy to WildFly and run">
         <!-- POSTGRES -->
@@ -273,6 +280,5 @@
             <arg value="http://localhost:8080/${project.context}"/>
         </exec>
     </target>
-
 
 </project>

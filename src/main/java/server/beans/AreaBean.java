@@ -111,7 +111,7 @@ public class AreaBean implements Serializable {
         db.clearTable();
     }
 
-    private boolean checkHit() {
+    public boolean checkHit() {
         if (x <= 0 && y >= 0 && y <= 0.5 * x + r / 2) return true;
         if (x * x + y * y <= r * r && x >= 0 && y >= 0) return true;
         return x <= 0 && y <= 0 && x >= -r / 2 && y >= -r;
