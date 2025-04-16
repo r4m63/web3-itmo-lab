@@ -1,4 +1,7 @@
 .gradle/
 .idea/
-/build/
 !gradle/wrapper/*
+/build/
+/lib/*
+secret.properties
+TODO
