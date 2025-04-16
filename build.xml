@@ -19,7 +19,6 @@
 
     <target name="download-deps">
         <mkdir dir="${lib.dir}/temp"/>
-
         <get src="https://repo1.maven.org/maven2/jakarta/platform/jakarta.jakartaee-web-api/9.0.0/jakarta.jakartaee-web-api-9.0.0.jar"
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.13.0/antlr4-runtime-4.13.0.jar"
@@ -64,13 +63,10 @@
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar"
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
-
-        <echo message="Downloading SCP dependencies..."/>
         <get src="https://repo1.maven.org/maven2/com/jcraft/jsch/0.1.54/jsch-0.1.54.jar"
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/apache/ant/ant-jsch/1.10.14/ant-jsch-1.10.14.jar"
              dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
-
         <copy todir="${lib.dir}">
             <fileset dir="${lib.dir}/temp"/>
         </copy>
@@ -78,13 +74,7 @@
     </target>
 
     <target name="compile">
-        <mkdir dir="${build.dir}"/>
         <mkdir dir="${classes.dir}"/>
-        <mkdir dir="${lib.dir}"/>
-
-        <available property="src.exists" file="${src.dir}"/>
-        <fail unless="src.exists" message="Source directory ${src.dir} not found!"/>
-
         <javac srcdir="${src.dir}"
                destdir="${classes.dir}"
                includeantruntime="false"
@@ -94,11 +84,9 @@
                debug="true"
                fork="true"
                executable="${javac.executable}">
-
             <classpath refid="compile.classpath"/>
             <compilerarg line="-Xlint:unchecked -parameters"/>
         </javac>
-
         <copy todir="${classes.dir}" preservelastmodified="true">
             <fileset dir="${resources.dir}" includes="**/*" excludes="**/*.java"/>
         </copy>
@@ -111,8 +99,7 @@
     </target>
 
     <target name="build">
-
-        <war destfile="${build.dir}/${war.file}"
+        <war destfile="${war.file}"
              webxml="${web.dir}/WEB-INF/web.xml"
              needxmlfile="false">
             <fileset dir="${web.dir}" excludes="WEB-INF/web.xml"/>
@@ -120,13 +107,11 @@
             <classes dir="${classes.dir}" excludes="**/package-info.class"/>
             <metainf dir="${build.dir}/META-INF"/>
         </war>
-
         <antcall target="music"/>
     </target>
 
     <target name="clean">
         <delete dir="${build.dir}"/>
-        <delete dir="${lib.dir}"/>
     </target>
 
     <target name="music" description="Play music when build is complete">
@@ -151,23 +136,16 @@
     </target>
 
     <target name="doc" description="Добавление MD5 и SHA-1, генерация javadoc">
-        <!-- Расчёт MD5 и SHA-1 для .war -->
-        <checksum file="${build.dir}/${war.file}" property="war.md5" algorithm="MD5"/>
-        <checksum file="${build.dir}/${war.file}" property="war.sha1" algorithm="SHA-1"/>
-
-        <!-- Добавление хешей в MANIFEST.MF -->
+        <checksum file="${war.file}" property="war.md5" algorithm="MD5"/>
+        <checksum file="${war.file}" property="war.sha1" algorithm="SHA-1"/>
         <mkdir dir="${build.dir}/META-INF"/>
         <manifest file="${build.dir}/META-INF/MANIFEST.MF" mode="update">
             <attribute name="MD5" value="${war.md5}"/>
             <attribute name="SHA-1" value="${war.sha1}"/>
         </manifest>
-
-        <!-- Пересборка WAR с новым MANIFEST -->
-        <war destfile="${build.dir}/${war.file}" update="true">
+        <war destfile="${war.file}" update="true">
             <metainf dir="${build.dir}/META-INF"/>
         </war>
-
-        <!-- Генерация Javadoc -->
         <mkdir dir="${build.dir}/javadoc"/>
         <javadoc destdir="${build.dir}/javadoc"
                  sourcepath="${src.dir}"
@@ -178,9 +156,7 @@
                  version="true"
                  doctitle="Lab3 API">
         </javadoc>
-
-        <!-- Добавление Javadoc в WAR -->
-        <jar destfile="${build.dir}/${war.file}" update="true">
+        <jar destfile="${war.file}" update="true">
             <fileset dir="${build.dir}/javadoc"/>
         </jar>
     </target>
@@ -188,18 +164,18 @@
     <target name="start-env" description="Start environment: DB, server, deploy WAR, open web">
 
         <!-- 1. Запуск контейнера PostgreSQL -->
-<!--        <exec executable="docker" failonerror="true">-->
-<!--            <arg value="run"/>-->
-<!--            <arg value="&#45;&#45;rm"/>-->
-<!--            <arg value="-d"/>-->
-<!--            <arg value="&#45;&#45;name"/>-->
-<!--            <arg value="my-postgres"/>-->
-<!--            <arg value="-e"/>-->
-<!--            <arg value="POSTGRES_PASSWORD=postgres"/>-->
-<!--            <arg value="-p"/>-->
-<!--            <arg value="5432:5432"/>-->
-<!--            <arg value="postgres:15"/>-->
-<!--        </exec>-->
+        <!--        <exec executable="docker" failonerror="true">-->
+        <!--            <arg value="run"/>-->
+        <!--            <arg value="&#45;&#45;rm"/>-->
+        <!--            <arg value="-d"/>-->
+        <!--            <arg value="&#45;&#45;name"/>-->
+        <!--            <arg value="my-postgres"/>-->
+        <!--            <arg value="-e"/>-->
+        <!--            <arg value="POSTGRES_PASSWORD=postgres"/>-->
+        <!--            <arg value="-p"/>-->
+        <!--            <arg value="5432:5432"/>-->
+        <!--            <arg value="postgres:15"/>-->
+        <!--        </exec>-->
 
         <!-- 2. Запуск standalone.sh (WildFly / JBoss) -->
         <exec executable="${wildfly.home}/bin/standalone.sh" osfamily="unix" spawn="true"/>
@@ -231,14 +207,72 @@
         </exec>
 
         <!-- Linux -->
-<!--        <exec executable="xdg-open" osfamily="unix" failonerror="false">-->
-<!--            <arg value="http://localhost:8080/${project.context}"/>-->
-<!--        </exec>-->
+        <!--        <exec executable="xdg-open" osfamily="unix" failonerror="false">-->
+        <!--            <arg value="http://localhost:8080/${project.context}"/>-->
+        <!--        </exec>-->
 
     </target>
 
     <!-- test, native2ascii, history, diff, env, alt  -->
 
+    <target name="env" description="Deploy to WildFly and run">
+        <!-- POSTGRES -->
+        <available property="docker.exists" file="${docker.home}"/>
+        <fail unless="docker.exists" message="Docker not found at ${docker.home}"/>
+
+        <exec executable="docker-compose" dir="${basedir}" failonerror="false">
+            <arg value="down"/>
+        </exec>
+
+        <exec executable="docker-compose" dir="${basedir}" failonerror="true">
+            <arg value="up"/>
+            <arg value="-d"/>
+        </exec>
+
+        <exec executable="docker" dir="${basedir}" failonerror="true">
+            <arg value="inspect"/>
+            <arg value="-f"/>
+            <arg value="{{.State.Running}}"/>
+            <arg value="lab3-postgres"/>
+        </exec>
+
+        <!-- WILDFLY -->
+        <available property="wildfly.exists" file="${wildfly.home}"/>
+        <fail unless="wildfly.exists"
+              message="WildFly not found at ${wildfly.home}. Please set correct wildfly.home in properties"/>
+
+        <exec executable="${wildfly.home}/bin/jboss-cli.sh" osfamily="unix" failonerror="false">
+            <arg value="--connect"/>
+            <arg value="command=:shutdown"/>
+        </exec>
+        <sleep seconds="3"/>
+
+        <copy file="${war.file}"
+              tofile="${wildfly.deployment}/${project.war.context}"
+              overwrite="true"/>
+
+        <exec executable="${wildfly.home}/bin/standalone.sh" spawn="true">
+            <arg value="-b"/>
+            <arg value="0.0.0.0"/>
+            <env key="JAVA_HOME" value="${java.home}"/>
+        </exec>
+
+        <waitfor maxwait="30" maxwaitunit="second">
+            <http url="http://localhost:8080/"/>
+        </waitfor>
+
+        <exec executable="open" osfamily="mac">
+            <arg value="http://localhost:8080/${project.context}"/>
+        </exec>
+        <exec executable="xdg-open" osfamily="unix" os="linux" failonerror="false">
+            <arg value="http://localhost:8080/${project.context}"/>
+        </exec>
+        <exec executable="cmd" osfamily="windows" failonerror="false">
+            <arg value="/c"/>
+            <arg value="start"/>
+            <arg value="http://localhost:8080/${project.context}"/>
+        </exec>
+    </target>
 
 
 </project>
