@@ -1,4 +1,0 @@
-указать не прямой путь к jdk а через JAVA_HOME или как-то по другому
-после билда перекидывать в директорию wildfly/standalone/deployments/
-postgres докер
-по тз ant скрипты
