@@ -5,12 +5,12 @@
     <property file="secret.properties"/>
 
     <path id="compile.classpath">
-        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+        <fileset dir="${lib}" includes="**/*.jar"/>
     </path>
 
     <path id="test.classpath">
         <path refid="compile.classpath"/>
-        <fileset dir="${lib.dir}">
+        <fileset dir="${lib}">
             <include name="junit-jupiter-api-${junit.version}.jar"/>
             <include name="junit-jupiter-engine-${junit.version}.jar"/>
             <include name="junit-platform-commons-${junit.platform.version}.jar"/>
@@ -19,35 +19,35 @@
             <include name="apiguardian-api-1.1.2.jar"/>
             <include name="opentest4j-1.2.0.jar"/>
         </fileset>
-        <pathelement location="${build.dir}/classes"/>
-        <pathelement location="${build.dir}/test-classes"/>
+        <pathelement location="${dir.build}/classes"/>
+        <pathelement location="${dir.build}/test-classes"/>
     </path>
 
     <target name="download-test-libs">
-        <mkdir dir="${lib.dir}"/>
+        <mkdir dir="${lib}"/>
         <get src="https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/${junit.version}/junit-jupiter-api-${junit.version}.jar"
-             dest="${lib.dir}" verbose="true"/>
+             dest="${lib}" verbose="true"/>
         <get src="https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-engine/${junit.version}/junit-jupiter-engine-${junit.version}.jar"
-             dest="${lib.dir}" verbose="true"/>
+             dest="${lib}" verbose="true"/>
         <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-commons/${junit.platform.version}/junit-platform-commons-${junit.platform.version}.jar"
-             dest="${lib.dir}" verbose="true"/>
+             dest="${lib}" verbose="true"/>
         <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-engine/${junit.platform.version}/junit-platform-engine-${junit.platform.version}.jar"
-             dest="${lib.dir}" verbose="true"/>
+             dest="${lib}" verbose="true"/>
         <get src="https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/${junit.platform.version}/junit-platform-console-standalone-${junit.platform.version}.jar"
-             dest="${lib.dir}" verbose="true"/>
+             dest="${lib}" verbose="true"/>
         <get src="https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar"
-             dest="${lib.dir}" verbose="true"/>
+             dest="${lib}" verbose="true"/>
         <get src="https://repo1.maven.org/maven2/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar"
-             dest="${lib.dir}" verbose="true"/>
+             dest="${lib}" verbose="true"/>
     </target>
 
     <target name="test" depends="download-test-libs" description="Run JUnit 5 tests">
-        <mkdir dir="${build.dir}/test-classes"/>
-        <mkdir dir="${test.reports.dir}"/>
+        <mkdir dir="${dir.build}/test-classes"/>
+        <mkdir dir="${dir.build.test-reports}"/>
 
         <!-- Компиляция тестов -->
-        <javac srcdir="${test.src.dir}"
-               destdir="${build.dir}/test-classes"
+        <javac srcdir="${src.test.java}"
+               destdir="${dir.build}/test-classes"
                includeantruntime="false"
                classpathref="test.classpath"
                release="17"/>
@@ -62,17 +62,17 @@
               fork="true"
               failonerror="true">
             <arg value="--class-path"/>
-            <arg path="${build.dir}/test-classes:${build.dir}/classes"/>
+            <arg path="${dir.build}/test-classes:${dir.build}/classes"/>
             <arg value="--scan-class-path"/>
             <arg value="--include-classname"/>
             <arg value=".*Test"/>
             <arg value="--reports-dir"/>
-            <arg path="${test.reports.dir}"/>
+            <arg path="${dir.build.test-reports}"/>
         </java>
     </target>
 
     <target name="scp" description="Перемещение собранного проекта по SCP">
-        <scp file="${build.dir}/${war.file}"
+        <scp file="${file.war}"
              todir="${scp.username}@${scp.host}:${scp.remotedir}"
              port="${scp.port}"
              password="${scp.password}"
@@ -81,61 +81,62 @@
     </target>
 
     <target name="download-deps">
-        <mkdir dir="${lib.dir}/temp"/>
+        <mkdir dir="${lib}/temp"/>
         <get src="https://repo1.maven.org/maven2/jakarta/platform/jakarta.jakartaee-web-api/9.0.0/jakarta.jakartaee-web-api-9.0.0.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.13.0/antlr4-runtime-4.13.0.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/primefaces/primefaces/14.0.6/primefaces-14.0.6-jakarta.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/primefaces/themes/all-themes/1.1.0/all-themes-1.1.0.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/webjars/npm/primeflex/3.3.1/primeflex-3.3.1.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/webjars/npm/primeicons/7.0.0/primeicons-7.0.0.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/hibernate/orm/hibernate-core/6.6.1.Final/hibernate-core-6.6.1.Final.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true" ignoreerrors="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true" ignoreerrors="true"/>
         <get src="https://repo1.maven.org/maven2/org/jboss/logging/jboss-logging/3.5.3.Final/jboss-logging-3.5.3.Final.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/jakarta/persistence/jakarta.persistence-api/3.1.0/jakarta.persistence-api-3.1.0.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/hibernate/common/hibernate-commons-annotations/6.0.6.Final/hibernate-commons-annotations-6.0.6.Final.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/net/bytebuddy/byte-buddy/1.14.11/byte-buddy-1.14.11.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/jboss/spec/javax/transaction/jboss-transaction-api_1.3_spec/2.0.0.Final/jboss-transaction-api_1.3_spec-2.0.0.Final.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/com/fasterxml/classmate/1.5.1/classmate-1.5.1.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.3.12/logback-classic-1.3.12.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.3.12/logback-core-1.3.12.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/com/jcraft/jsch/0.1.54/jsch-0.1.54.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/apache/ant/ant-jsch/1.10.14/ant-jsch-1.10.14.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/2.0.9/slf4j-simple-2.0.9.jar"
-             dest="${lib.dir}/temp" verbose="true" usetimestamp="true"/>
-        <copy todir="${lib.dir}">
-            <fileset dir="${lib.dir}/temp"/>
+             dest="${lib}/temp" verbose="true" usetimestamp="true"/>
+        <copy todir="${lib}">
+            <fileset dir="${lib}/temp"/>
         </copy>
-        <delete dir="${lib.dir}/temp"/>
+        <delete dir="${lib}/temp"/>
     </target>
 
     <target name="compile">
-        <mkdir dir="${classes.dir}"/>
-        <javac srcdir="${src.dir}"
-               destdir="${classes.dir}"
+        <mkdir dir="${dir.build.classes}"/>
+
+        <javac srcdir="${src.main.java}"
+               destdir="${dir.build.classes}"
                includeantruntime="false"
                source="17"
                target="17"
@@ -146,31 +147,47 @@
             <classpath refid="compile.classpath"/>
             <compilerarg line="-Xlint:unchecked -parameters"/>
         </javac>
-        <copy todir="${classes.dir}" preservelastmodified="true">
-            <fileset dir="${resources.dir}" includes="**/*" excludes="**/*.java"/>
+
+        <copy todir="${dir.build.classes}" preservelastmodified="true">
+            <fileset dir="${src.main.resources}" includes="**/*" excludes="**/*.java"/>
         </copy>
 
-        <mkdir dir="${classes.dir}/META-INF"/>
-        <manifest file="${build.dir}/META-INF/MANIFEST.MF" mode="update">
+        <mkdir dir="${dir.build.classes}/META-INF"/>
+        <manifest file="${dir.build}/META-INF/MANIFEST.MF" mode="update">
             <attribute name="Manifest-Version" value="1.0.0"/>
             <attribute name="Implementation-Version" value="1.0.0"/>
         </manifest>
     </target>
 
-    <target name="build">
-        <war destfile="${war.file}"
-             webxml="${web.dir}/WEB-INF/web.xml"
+    <target name="native2ascii" description="Converting localization files">
+        <delete dir="${dir.build.resources}/resources-native"/>
+        <mkdir dir="${dir.build.resources}/resources-native"/>
+
+        <native2ascii src="${src.main.resources}"
+                      dest="${dir.build.resources}/resources-native"
+                      includes="**/*.properties"
+                      encoding="ISO-8859-1"
+                      reverse="false"/>
+
+        <copy todir="${dir.build.classes}" preservelastmodified="true">
+            <fileset dir="${dir.build.resources}/resources-native" includes="**/*.properties"/>
+        </copy>
+    </target>
+
+    <target name="build" depends="compile,native2ascii">
+        <war destfile="${file.war}"
+             webxml="${src.main.webapp}/WEB-INF/web.xml"
              needxmlfile="false">
-            <fileset dir="${web.dir}" excludes="WEB-INF/web.xml"/>
-            <lib dir="${lib.dir}" excludes="**/*.properties"/>
-            <classes dir="${classes.dir}" excludes="**/package-info.class"/>
-            <metainf dir="${build.dir}/META-INF"/>
+            <fileset dir="${src.main.webapp}" excludes="WEB-INF/web.xml"/>
+            <lib dir="${lib}" excludes="**/*.properties"/>
+            <classes dir="${dir.build.classes}" excludes="**/package-info.class"/>
+            <metainf dir="${dir.build.classes}/META-INF"/>
         </war>
         <antcall target="music"/>
     </target>
 
     <target name="clean">
-        <delete dir="${build.dir}"/>
+        <delete dir="${dir.build}"/>
     </target>
 
     <target name="music" description="Play music when build is complete">
@@ -185,29 +202,29 @@
             <arg value="/c"/>
             <arg value="start"/>
             <arg value="/B"/>
-            <arg value="${music.file}"/>
+            <arg value="${file.music}"/>
         </exec>
 
         <exec executable="/bin/sh" osfamily="mac" failonerror="false">
             <arg value="-c"/>
-            <arg value="afplay '${music.file}' &amp;"/>
+            <arg value="afplay '${file.music}' &amp;"/>
         </exec>
     </target>
 
     <target name="doc" description="Добавление MD5 и SHA-1, генерация javadoc">
-        <checksum file="${war.file}" property="war.md5" algorithm="MD5"/>
-        <checksum file="${war.file}" property="war.sha1" algorithm="SHA-1"/>
-        <mkdir dir="${build.dir}/META-INF"/>
-        <manifest file="${build.dir}/META-INF/MANIFEST.MF" mode="update">
+        <checksum file="${file.war}" property="war.md5" algorithm="MD5"/>
+        <checksum file="${file.war}" property="war.sha1" algorithm="SHA-1"/>
+        <mkdir dir="${dir.build}/META-INF"/>
+        <manifest file="${dir.build}/META-INF/MANIFEST.MF" mode="update">
             <attribute name="MD5" value="${war.md5}"/>
             <attribute name="SHA-1" value="${war.sha1}"/>
         </manifest>
-        <war destfile="${war.file}" update="true">
-            <metainf dir="${build.dir}/META-INF"/>
+        <war destfile="${file.war}" update="true">
+            <metainf dir="${dir.build}/META-INF"/>
         </war>
-        <mkdir dir="${build.dir}/javadoc"/>
-        <javadoc destdir="${build.dir}/javadoc"
-                 sourcepath="${src.dir}"
+        <mkdir dir="${dir.build}/javadoc"/>
+        <javadoc destdir="${dir.build}/javadoc"
+                 sourcepath="${src.main.java}"
                  classpathref="compile.classpath"
                  packagenames="*"
                  use="true"
@@ -215,8 +232,8 @@
                  version="true"
                  doctitle="Lab3 API">
         </javadoc>
-        <jar destfile="${war.file}" update="true">
-            <fileset dir="${build.dir}/javadoc"/>
+        <jar destfile="${file.war}" update="true">
+            <fileset dir="${dir.build}/javadoc"/>
         </jar>
     </target>
 
@@ -252,8 +269,8 @@
         </exec>
         <sleep seconds="3"/>
 
-        <copy file="${war.file}"
-              tofile="${wildfly.deployment}/${project.war.context}"
+        <copy file="${file.war}"
+              tofile="${wildfly.deployment}/${name.project.bin}"
               overwrite="true"/>
 
         <exec executable="${wildfly.home}/bin/standalone.sh" spawn="true">
@@ -267,40 +284,41 @@
         </waitfor>
 
         <exec executable="open" osfamily="mac">
-            <arg value="http://localhost:8080/${project.context}"/>
+            <arg value="http://localhost:8080/${name.project}"/>
         </exec>
         <exec executable="xdg-open" osfamily="unix" os="linux" failonerror="false">
-            <arg value="http://localhost:8080/${project.context}"/>
+            <arg value="http://localhost:8080/${name.project}"/>
         </exec>
         <exec executable="cmd" osfamily="windows" failonerror="false">
             <arg value="/c"/>
             <arg value="start"/>
-            <arg value="http://localhost:8080/${project.context}"/>
+            <arg value="http://localhost:8080/${name.project}"/>
         </exec>
     </target>
 
-    <!-- native2ascii, history, diff -->
-
+    <fileset id="areabean.fileset" dir="${dir.build.alt.src}">
+        <include name="**/AreaBean.java"/>
+    </fileset>
     <target name="alt" description="Create alternative version in build/alt directory">
-        <delete dir="${alt.dir}"/>
-        <mkdir dir="${alt.dir}"/>
-        <mkdir dir="${alt.src.dir}"/>
-        <mkdir dir="${alt.web.dir}"/>
-        <mkdir dir="${alt.classes.dir}"/>
-        <mkdir dir="${alt.lib.dir}"/>
+        <delete dir="${dir.build.alt}"/>
+        <mkdir dir="${dir.build.alt}"/>
+        <mkdir dir="${dir.build.alt.src}"/>
+        <mkdir dir="${dir.build.alt.web}"/>
+        <mkdir dir="${dir.build.alt.classes}"/>
+        <mkdir dir="${dir.build.alt.lib}"/>
 
-        <copy todir="${alt.src.dir}">
-            <fileset dir="${src.dir}"/>
+        <copy todir="${dir.build.alt.src}">
+            <fileset dir="${src.main.java}"/>
         </copy>
-        <copy todir="${alt.web.dir}">
-            <fileset dir="${web.dir}"/>
-        </copy>
-
-        <copy todir="${alt.lib.dir}">
-            <fileset dir="${lib.dir}"/>
+        <copy todir="${dir.build.alt.web}">
+            <fileset dir="${src.main.webapp}"/>
         </copy>
 
-        <fileset id="rename.files" dir="${alt.src.dir}">
+        <copy todir="${dir.build.alt.lib}">
+            <fileset dir="${lib}"/>
+        </copy>
+
+        <fileset id="rename.files" dir="${dir.build.alt.src}">
             <include name="**/*.java"/>
             <include name="**/*.properties"/>
             <include name="**/*.xml"/>
@@ -308,48 +326,48 @@
         <pathconvert property="files.to.rename" refid="rename.files" pathsep=","/>
 
         <replaceregexp flags="g" match="${replace.regex.oldName}" replace="${replace.regex.newName}">
-            <fileset dir="${alt.src.dir}">
+            <fileset dir="${dir.build.alt.src}">
                 <include name="**/*.java"/>
                 <include name="**/*.properties"/>
                 <include name="**/*.xml"/>
             </fileset>
-            <fileset dir="${alt.web.dir}">
+            <fileset dir="${dir.build.alt.web}">
                 <include name="**/*.jsp"/>
                 <include name="**/*.html"/>
                 <include name="**/*.xml"/>
             </fileset>
         </replaceregexp>
 
-        <move todir="${alt.src.dir}">
-            <fileset dir="${alt.src.dir}" includes="**/${replace.regex.oldName}.java"/>
+        <move todir="${dir.build.alt.src}">
+            <fileset dir="${dir.build.alt.src}" includes="**/${replace.regex.oldName}.java"/>
             <mapper type="regexp" from="^(.*)${replace.regex.oldName}(.*)$$" to="\1${replace.regex.newName}\2"/>
         </move>
 
-        <javac srcdir="${alt.src.dir}"
-               destdir="${alt.classes.dir}"
+        <javac srcdir="${dir.build.alt.src}"
+               destdir="${dir.build.alt.classes}"
                includeantruntime="false"
                classpathref="compile.classpath"
                release="17">
             <classpath>
-                <fileset dir="${alt.lib.dir}" includes="**/*.jar"/>
+                <fileset dir="${dir.build.alt.lib}" includes="**/*.jar"/>
             </classpath>
         </javac>
 
-        <copy todir="${alt.classes.dir}">
-            <fileset dir="${resources.dir}" excludes="**/*.java"/>
+        <copy todir="${dir.build.alt.classes}">
+            <fileset dir="${src.main.resources}" excludes="**/*.java"/>
         </copy>
 
-        <war destfile="${alt.war.file}"
-             webxml="${alt.web.dir}/WEB-INF/web.xml"
+        <war destfile="${file.alt.war}"
+             webxml="${dir.build.alt.web}/WEB-INF/web.xml"
              needxmlfile="false">
-            <classes dir="${alt.classes.dir}"/>
-            <lib dir="${alt.lib.dir}"/>
-            <fileset dir="${alt.web.dir}" excludes="WEB-INF/web.xml"/>
+            <classes dir="${dir.build.alt.classes}"/>
+            <lib dir="${dir.build.alt.lib}"/>
+            <fileset dir="${dir.build.alt.web}" excludes="WEB-INF/web.xml"/>
         </war>
     </target>
 
-    <fileset id="areabean.fileset" dir="${alt.src.dir}">
-        <include name="**/AreaBean.java"/>
-    </fileset>
+
+    <!-- history, diff, env-stop -->
+
 
 </project>
