@@ -220,8 +220,6 @@
         </jar>
     </target>
 
-    <!-- native2ascii, history, diff, alt  -->
-
     <target name="env" description="Deploy to WildFly and run">
         <!-- POSTGRES -->
         <available property="docker.exists" file="${docker.home}"/>
@@ -280,5 +278,78 @@
             <arg value="http://localhost:8080/${project.context}"/>
         </exec>
     </target>
+
+    <!-- native2ascii, history, diff -->
+
+    <target name="alt" description="Create alternative version in build/alt directory">
+        <delete dir="${alt.dir}"/>
+        <mkdir dir="${alt.dir}"/>
+        <mkdir dir="${alt.src.dir}"/>
+        <mkdir dir="${alt.web.dir}"/>
+        <mkdir dir="${alt.classes.dir}"/>
+        <mkdir dir="${alt.lib.dir}"/>
+
+        <copy todir="${alt.src.dir}">
+            <fileset dir="${src.dir}"/>
+        </copy>
+        <copy todir="${alt.web.dir}">
+            <fileset dir="${web.dir}"/>
+        </copy>
+
+        <copy todir="${alt.lib.dir}">
+            <fileset dir="${lib.dir}"/>
+        </copy>
+
+        <fileset id="rename.files" dir="${alt.src.dir}">
+            <include name="**/*.java"/>
+            <include name="**/*.properties"/>
+            <include name="**/*.xml"/>
+        </fileset>
+        <pathconvert property="files.to.rename" refid="rename.files" pathsep=","/>
+
+        <replaceregexp flags="g" match="${replace.regex.oldName}" replace="${replace.regex.newName}">
+            <fileset dir="${alt.src.dir}">
+                <include name="**/*.java"/>
+                <include name="**/*.properties"/>
+                <include name="**/*.xml"/>
+            </fileset>
+            <fileset dir="${alt.web.dir}">
+                <include name="**/*.jsp"/>
+                <include name="**/*.html"/>
+                <include name="**/*.xml"/>
+            </fileset>
+        </replaceregexp>
+
+        <move todir="${alt.src.dir}">
+            <fileset dir="${alt.src.dir}" includes="**/${replace.regex.oldName}.java"/>
+            <mapper type="regexp" from="^(.*)${replace.regex.oldName}(.*)$$" to="\1${replace.regex.newName}\2"/>
+        </move>
+
+        <javac srcdir="${alt.src.dir}"
+               destdir="${alt.classes.dir}"
+               includeantruntime="false"
+               classpathref="compile.classpath"
+               release="17">
+            <classpath>
+                <fileset dir="${alt.lib.dir}" includes="**/*.jar"/>
+            </classpath>
+        </javac>
+
+        <copy todir="${alt.classes.dir}">
+            <fileset dir="${resources.dir}" excludes="**/*.java"/>
+        </copy>
+
+        <war destfile="${alt.war.file}"
+             webxml="${alt.web.dir}/WEB-INF/web.xml"
+             needxmlfile="false">
+            <classes dir="${alt.classes.dir}"/>
+            <lib dir="${alt.lib.dir}"/>
+            <fileset dir="${alt.web.dir}" excludes="WEB-INF/web.xml"/>
+        </war>
+    </target>
+
+    <fileset id="areabean.fileset" dir="${alt.src.dir}">
+        <include name="**/AreaBean.java"/>
+    </fileset>
 
 </project>
