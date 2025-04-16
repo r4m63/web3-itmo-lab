@@ -366,6 +366,60 @@
         </war>
     </target>
 
+    <target name="init-antcontrib">
+        <mkdir dir="lib"/>
+        <get src="https://repo1.maven.org/maven2/ant-contrib/ant-contrib/1.0b3/ant-contrib-1.0b3.jar"
+             dest="lib/ant-contrib-1.0b3.jar"
+             verbose="true"
+             usetimestamp="true"/>
+        <taskdef resource="net/sf/antcontrib/antlib.xml"
+                 classpath="lib/ant-contrib-1.0b3.jar"/>
+    </target>
+
+    <target name="diff" depends="init-antcontrib" description="Check changes and commit to feature branch">
+        <!-- 1. Get changed files -->
+        <exec executable="git" outputproperty="git.diff.files">
+            <arg value="diff"/>
+            <arg value="--name-only"/>
+            <arg value="HEAD"/>
+        </exec>
+        <echo message="Changed files: ${git.diff.files}"/>
+
+        <!-- 2. Check for critical changes -->
+        <condition property="critical.changes.detected">
+            <contains string="${git.diff.files}" substring="${diff.critical.classes}"/>
+        </condition>
+
+        <!-- 3. Commit logic -->
+        <if>
+            <isset property="critical.changes.detected"/>
+            <then>
+                <echo message="Changes affect critical classes. Commit skipped."/>
+            </then>
+            <else>
+                <echo message="No critical changes detected. Performing commit..."/>
+
+                <tstamp>
+                    <format property="commit.time" pattern="yyyy-MM-dd HH:mm:ss"/>
+                </tstamp>
+
+                <exec executable="git" failonerror="true">
+                    <arg value="commit"/>
+                    <arg value="-a"/>
+                    <arg value="-m"/>
+                    <arg value="Auto-commit at ${commit.time}"/>
+                </exec>
+
+            </else>
+        </if>
+
+        <!-- Return to original branch -->
+        <exec executable="git" failonerror="false">
+            <arg value="checkout"/>
+            <arg value="-"/>
+        </exec>
+    </target>
+
 
     <!-- history, diff, env-stop -->
 
