@@ -28,6 +28,62 @@ public class AreaBean implements Serializable {
     private double r;
     private boolean hit;
 
+    public DatabaseManager getDb() {
+        return db;
+    }
+
+    public void setDb(DatabaseManager db) {
+        this.db = db;
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    public double getR() {
+        return r;
+    }
+
+    public void setR(double r) {
+        this.r = r;
+    }
+
+    public boolean isHit() {
+        return hit;
+    }
+
+    public void setHit(boolean hit) {
+        this.hit = hit;
+    }
+
+    public List<Integer> getXValues() {
+        return XValues;
+    }
+
+    public void setXValues(List<Integer> XValues) {
+        this.XValues = XValues;
+    }
+
+    public List<Point> getPoints() {
+        return points;
+    }
+
+    public void setPoints(List<Point> points) {
+        this.points = points;
+    }
+
     private List<Integer> XValues = Arrays.asList(-3, -2, -1, 0, 1, 2, 3, 4, 5);
     private List<Point> points;
 

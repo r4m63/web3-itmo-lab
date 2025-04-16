@@ -2,38 +2,16 @@
 <project name="lab3" basedir="." default="build">
 
     <property file="project.properties"/>
-
-    <property name="src.dir" location="src/main/java"/>
-    <property name="resources.dir" location="src/main/resources"/>
-    <property name="web.dir" location="src/main/webapp"/>
-    <property name="build.dir" location="build"/>
-    <property name="classes.dir" location="${build.dir}/classes"/>
-    <property name="lib.dir" location="lib"/>
-    <property name="war.file" value="lab3.war"/>
-    <property name="java.home"
-              value="/Users/ramiltadzheddinov/Library/Java/JavaVirtualMachines/corretto-17.0.14/Contents/Home"/>
-    <property name="javac.executable" value="${java.home}/bin/javac"/>
-    <property name="music.file" value="music/mc.ogg"/>
-
+    <property file="secret.properties"/>
 
     <path id="compile.classpath">
         <fileset dir="${lib.dir}" includes="**/*.jar"/>
     </path>
 
-    <!-- TODO: NEED FIX-->
     <target name="scp" description="Перемещение собранного проекта по SCP">
-        <taskdef name="scp"
-                 classname="org.apache.tools.ant.taskdefs.optional.ssh.Scp">
-            <classpath>
-                <pathelement location="${lib.dir}/ant-jsch-1.10.14.jar"/>
-                <pathelement location="${lib.dir}/jsch-0.1.54.jar"/>
-            </classpath>
-        </taskdef>
-
-        <!-- Отправка файла -->
         <scp file="${build.dir}/${war.file}"
-             todir="${scp.username}@helios.cs.ifmo.ru:/home/studs/${scp.username}/zalupa"
-             port="2222"
+             todir="${scp.username}@${scp.host}:${scp.remotedir}"
+             port="${scp.port}"
              password="${scp.password}"
              trust="true"
              verbose="true"/>
@@ -99,7 +77,6 @@
         <delete dir="${lib.dir}/temp"/>
     </target>
 
-    <!--    depends="download-deps"-->
     <target name="compile">
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${classes.dir}"/>
@@ -133,7 +110,6 @@
         </manifest>
     </target>
 
-    <!--    depends="compile"-->
     <target name="build">
 
         <war destfile="${build.dir}/${war.file}"
@@ -208,5 +184,61 @@
             <fileset dir="${build.dir}/javadoc"/>
         </jar>
     </target>
+
+    <target name="start-env" description="Start environment: DB, server, deploy WAR, open web">
+
+        <!-- 1. Запуск контейнера PostgreSQL -->
+<!--        <exec executable="docker" failonerror="true">-->
+<!--            <arg value="run"/>-->
+<!--            <arg value="&#45;&#45;rm"/>-->
+<!--            <arg value="-d"/>-->
+<!--            <arg value="&#45;&#45;name"/>-->
+<!--            <arg value="my-postgres"/>-->
+<!--            <arg value="-e"/>-->
+<!--            <arg value="POSTGRES_PASSWORD=postgres"/>-->
+<!--            <arg value="-p"/>-->
+<!--            <arg value="5432:5432"/>-->
+<!--            <arg value="postgres:15"/>-->
+<!--        </exec>-->
+
+        <!-- 2. Запуск standalone.sh (WildFly / JBoss) -->
+        <exec executable="${wildfly.home}/bin/standalone.sh" osfamily="unix" spawn="true"/>
+        <exec executable="${wildfly.home}/bin/standalone.bat" osfamily="windows" spawn="true"/>
+
+        <!-- 3. Копирование .war файла в папку deployments -->
+        <copy file="${build.dir}/${war.file}"
+              todir="${wildfly.home}/standalone/deployments"
+              overwrite="true"/>
+
+        <!-- 4. Открытие веб-браузера -->
+        <condition property="isWindows">
+            <os family="windows"/>
+        </condition>
+        <condition property="isMac">
+            <os family="mac"/>
+        </condition>
+
+        <!-- Windows -->
+        <exec executable="cmd" osfamily="windows" failonerror="false">
+            <arg value="/c"/>
+            <arg value="start"/>
+            <arg value="http://localhost:8080/${project.context}"/>
+        </exec>
+
+        <!-- macOS -->
+        <exec executable="open" osfamily="mac" failonerror="false">
+            <arg value="http://localhost:8080/${project.context}"/>
+        </exec>
+
+        <!-- Linux -->
+<!--        <exec executable="xdg-open" osfamily="unix" failonerror="false">-->
+<!--            <arg value="http://localhost:8080/${project.context}"/>-->
+<!--        </exec>-->
+
+    </target>
+
+    <!-- test, native2ascii, history, diff, env, alt  -->
+
+
 
 </project>

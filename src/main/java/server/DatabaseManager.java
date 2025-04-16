@@ -18,7 +18,7 @@ import java.util.List;
 @Startup
 public class DatabaseManager implements Serializable {
 
-    private final SessionFactory sessionFactory;
+    public final SessionFactory sessionFactory;
 
     public DatabaseManager() {
         final StandardServiceRegistry registry = new StandardServiceRegistryBuilder()

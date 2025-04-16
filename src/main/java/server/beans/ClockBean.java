@@ -19,6 +19,10 @@ public class ClockBean implements Serializable {
 
     private final LocalDateTime dateTime = LocalDateTime.now();
 
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
     public String getDate() {
         var dayOfWeek = dateTime.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("ru"));
         var dayOfMonth = dateTime.getDayOfMonth();
