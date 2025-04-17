@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: lab3-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 210605
+      POSTGRES_DB: web_lab3
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./pg_data:/var/lib/postgresql/data
+volumes:
+  pg_data:
