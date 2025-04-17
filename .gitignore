@@ -2,8 +2,9 @@
 .idea/
 !gradle/wrapper/*
 /build/
-/lib/*
+/lib
 secret.properties
 TODO
 pg_data/
 ant/
+gnu/

@@ -6,8 +6,11 @@ java_home := /Users/ramiltadzheddinov/Library/Java/JavaVirtualMachines/corretto-
 javac_executable := $(java_home)/bin/javac
 
 docker_home := /usr/local/bin/docker
+docker_compose_home := /usr/local/bin/docker-compose
 wildfly_home := /opt/wildfly-36.0.0.Final
 wildfly_deployment := $(wildfly_home)/standalone/deployments
+project_name := lab3
+war_file := gnu/build/lab3.war
 
 # ========== paths =========
 src_main_java := src/main/java
@@ -19,10 +22,12 @@ src_test_resources := src/test/resources
 
 lib := lib
 
-dir_build := ant/build
+dir_build := gnu/build
 dir_build_classes := $(dir_build)/classes
 dir_build_resources := $(dir_build)/resources
 dir_build_test_reports := $(dir_build)/test-reports
+dir_build_test_classes := $(dir_build)/test-classes
+
 
 file_war := $(dir_build)/lab3.war
 
@@ -43,11 +48,6 @@ name_project_bin := lab3.war
 # ========== resources =========
 file_music := music/mc.ogg
 diff_critical_classes := server/DatabaseManager.java
-
-# ========== tests =========
-junit_version := 5.10.0
-junit_platform_version := 1.10.0
-
 
 # ========== dependencies =========
 deps = \
@@ -72,10 +72,132 @@ deps = \
   https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar \
   https://repo1.maven.org/maven2/com/jcraft/jsch/0.1.54/jsch-0.1.54.jar \
   https://repo1.maven.org/maven2/org/apache/ant/ant-jsch/1.10.14/ant-jsch-1.10.14.jar \
-  https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/2.0.9/slf4j-simple-2.0.9.jar
+  https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/2.0.9/slf4j-simple-2.0.9.jar \
+  https://repo1.maven.org/maven2/jakarta/annotation/jakarta.annotation-api/2.1.0/jakarta.annotation-api-2.1.0.jar
+
+#test_lib_urls := \
+#  https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/$(junit_version)/junit-jupiter-api-$(junit_version).jar \
+#  https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-engine/$(junit_version)/junit-jupiter-engine-$(junit_version).jar \
+#  https://repo1.maven.org/maven2/org/junit/platform/junit-platform-commons/$(junit_platform_version)/junit-platform-commons-$(junit_platform_version).jar \
+#  https://repo1.maven.org/maven2/org/junit/platform/junit-platform-engine/$(junit_platform_version)/junit-platform-engine-$(junit_platform_version).jar \
+#  https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/$(junit_platform_version)/junit-platform-console-standalone-$(junit_platform_version).jar \
+#  https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar \
+#  https://repo1.maven.org/maven2/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar
+
+# ========== tests =========
+junit_version := 5.10.0
+junit_platform_version := 1.10.0
+
+# ========== зависимости тестов ==========
+test_libs := junit-platform-console-standalone-$(junit_platform_version).jar
+test_lib_urls := \
+  https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/$(junit_platform_version)/junit-platform-console-standalone-$(junit_platform_version).jar
+
+# ========== classpath ==========
+test_classpath := $(addprefix $(lib)/,$(test_libs)):$(dir_build_classes):$(dir_build_test_classes)
 
 
-# ========== rules =========
+.PHONY: env
+
+env:
+	@printf "\033[1;32m***** Setting up environment (WildFly + PostgreSQL) *****\033[0m\n"
+
+	# 1. Проверка Docker
+	@if ! command -v docker >/dev/null; then \
+		printf "\033[1;31mError: Docker not found at $(docker_home)\033[0m\n"; \
+		exit 1; \
+	fi
+
+	# 2. Остановка существующих контейнеров
+	@printf "\033[1;34mStopping any running containers...\033[0m\n"
+	@docker-compose down || true
+
+	# 3. Запуск PostgreSQL
+	@printf "\033[1;34mStarting PostgreSQL...\033[0m\n"
+	@docker-compose up -d
+
+	# 4. Проверка работы PostgreSQL
+	@printf "\033[1;34mChecking PostgreSQL status...\033[0m\n"
+	@if ! docker inspect -f '{{.State.Running}}' lab3-postgres | grep -q "true"; then \
+		printf "\033[1;31mError: PostgreSQL container is not running\033[0m\n"; \
+		exit 1; \
+	fi
+
+	# 5. Проверка WildFly
+	@printf "\033[1;34mChecking WildFly installation...\033[0m\n"
+	@if [ ! -d "$(wildfly_home)" ]; then \
+		printf "\033[1;31mError: WildFly not found at $(wildfly_home)\033[0m\n"; \
+		exit 1; \
+	fi
+
+	# 6. Остановка WildFly если работает
+	@printf "\033[1;34mStopping WildFly if running...\033[0m\n"
+	@if [ -f "$(wildfly_home)/bin/jboss-cli.sh" ]; then \
+		"$(wildfly_home)/bin/jboss-cli.sh" --connect command=:shutdown || true; \
+		sleep 3; \
+	fi
+
+	# 7. Деплой WAR-файла
+	@printf "\033[1;34mDeploying $(name_project_bin) to WildFly...\033[0m\n"
+	@mkdir -p "$(wildfly_deployment)"
+	@cp "$(file_war)" "$(wildfly_deployment)/$(name_project_bin)"
+
+	# 8. Запуск WildFly в фоновом режиме
+	@printf "\033[1;34mStarting WildFly...\033[0m\n"
+	@JAVA_HOME="$(java_home)" "$(wildfly_home)/bin/standalone.sh" -b 0.0.0.0 &
+
+	# 9. Ожидание запуска WildFly (макс 30 секунд)
+	@printf "\033[1;34mWaiting for WildFly to start (max 30 seconds)...\033[0m\n"
+	@timeout=30; \
+	while ! curl -s -f -o /dev/null "http://localhost:8080/"; do \
+		if [ $$timeout -le 0 ]; then \
+			printf "\033[1;31mError: WildFly failed to start\033[0m\n"; \
+			exit 1; \
+		fi; \
+		sleep 1; \
+		timeout=$$((timeout-1)); \
+	done
+
+	# 10. Открытие приложения в браузере (macOS)
+	@printf "\033[1;34mOpening application in browser...\033[0m\n"
+	@open "http://localhost:8080/$(name_project)"
+
+	@printf "\033[1;32m***** Environment setup completed successfully *****\033[0m\n"
+
+
+.PHONY: test
+
+
+test:
+	@echo "Preparing to run tests..."
+	@mkdir -p $(dir_build_test_classes)
+	@mkdir -p $(dir_build_test_reports)
+
+	@echo "Compiling test classes..."
+	@$(javac_executable) -d $(dir_build_test_classes) \
+		--release 17 \
+		-classpath "$(test_classpath):$(CLASSPATH)" \
+		$$(find $(src_test_java) -type f -name "*.java") || { echo "Test compilation failed"; exit 1; }
+
+	@if [ -z "$$(ls -A $(dir_build_test_classes))" ]; then \
+		echo "Error: No test classes compiled"; \
+		exit 1; \
+	fi
+
+	@echo "Running tests with JUnit ConsoleLauncher..."
+	@$(java_home)/bin/java \
+		-classpath "$(test_classpath):$(CLASSPATH):$(dir_build_test_classes):$(dir_build_classes)" \
+		org.junit.platform.console.ConsoleLauncher \
+		--class-path "$(dir_build_test_classes):$(dir_build_classes)" \
+		--scan-class-path \
+		--include-classname '.*Test' \
+		--reports-dir "$(dir_build_test_reports)" \
+		|| { echo "Some tests failed"; exit 1; }
+
+	@echo "✅ Test execution completed. Reports are in $(dir_build_test_reports)"
+
+
+
 
 .PHONY: download-deps
 download-deps:
@@ -87,6 +209,15 @@ download-deps:
 	done
 	@cp $(lib)/temp/* $(lib)/
 	@rm -rf $(lib)/temp
+
+	@mkdir -p $(lib)/temp
+	@for url in $(test_lib_urls); do \
+	  echo "Downloading: $$url"; \
+	  curl -L --retry 3 --fail -s -o $(lib)/temp/$$(basename $$url) "$$url"; \
+	done
+	@cp $(lib)/temp/* $(lib)/
+	@rm -rf $(lib)/temp
+
 	@printf "\033[1;32m***** Downloading Successful *****\033[0m\n"
 
 
@@ -197,21 +328,36 @@ build: compile
 
 clean:
 	@printf "\033[1;32m***** Cleaning build directories *****\033[0m\n"
-	@if [ -d "ant" ]; then \
-		echo "Removing ant/ directory..."; \
-		rm -rf ant; \
-	else \
-		echo "ant/ directory does not exist - nothing to remove"; \
+
+	@if [ -d "$(dir_build)" ]; then \
+		echo "Removing $(dir_build)/ directory..."; \
+		rm -rf "$(dir_build)"; \
+		rm -rf "gnu/"; \
 	fi
 
-	@if [ -d "lib" ]; then \
-		echo "Removing lib/ directory..."; \
-		rm -rf lib; \
+	# Удалим верхнюю директорию, если она пуста
+	@if [ -d "$(dir_build)" ]; then \
+		echo "Warning: $(dir_build)/ was not removed"; \
+	elif [ -d "$(dir_build:%/build=%)" ]; then \
+		dir_to_check="$(dir_build:%/build=%)"; \
+		if [ -z "$$(ls -A "$$dir_to_check")" ]; then \
+			echo "Removing empty directory $$dir_to_check..."; \
+			rmdir "$$dir_to_check"; \
+		fi; \
+	fi
+
+	@if [ -d "$(lib)" ]; then \
+		echo "Removing $(lib)/ directory..."; \
+		rm -rf "$(lib)"; \
 	else \
-		echo "lib/ directory does not exist - nothing to remove"; \
+		echo "$(lib)/ directory does not exist - nothing to remove"; \
 	fi
 
 	@printf "\033[1;32m***** Clean complete *****\033[0m\n"
+
+
+
+
 
 .PHONY: music
 
