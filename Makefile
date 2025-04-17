@@ -79,22 +79,23 @@ deps = \
 
 .PHONY: download-deps
 download-deps:
+	@printf "\033[1;32m***** Downloading Dependencies *****\033[0m\n"
 	@mkdir -p $(lib)/temp
 	@for url in $(deps); do \
-	  echo "Downloading $$url..."; \
+	  echo "Downloading: $$url"; \
 	  curl -L --retry 3 --fail -O -J -s "$$url" --output-dir $(lib)/temp; \
 	done
 	@cp $(lib)/temp/* $(lib)/
 	@rm -rf $(lib)/temp
+	@printf "\033[1;32m***** Downloading Successful *****\033[0m\n"
 
 
 .PHONY: compile
 CLASSPATH := $(shell find $(lib) -name "*.jar" | tr '\n' ':')
 compile:
-	@echo "Compiling Java sources..."
+	@printf "\033[1;32m***** Compiling Java Sources *****\033[0m\n"
 	@mkdir -p "$(dir_build_classes)"
 
-	# Компиляция с включением информации о deprecated API
 	$(javac_executable) -source $(java_version) -target $(java_version) \
 		-encoding UTF-8 \
 		-parameters \
@@ -104,8 +105,8 @@ compile:
 		-d "$(dir_build_classes)" \
 		$$(find $(src_main_java) -type f -name '*.java')
 
+	@printf "\033[1;32mЭто ничего страшного, предупреждение по поводу deprecated, можно смело игнорировать\033[0m\n"
 	@echo "Copying resources..."
-	# Надежное копирование ресурсов для macOS
 	@if [ -d "$(src_main_resources)" ]; then \
 		find "$(src_main_resources)" -type f ! -name '*.java' | while read -r file; do \
 			rel_path="$${file#$(src_main_resources)/}"; \
@@ -121,22 +122,19 @@ compile:
 	@mkdir -p "$(dir_build)/META-INF"
 	@echo "Manifest-Version: 1.0.0" > "$(dir_build)/META-INF/MANIFEST.MF"
 	@echo "Implementation-Version: 1.0.0" >> "$(dir_build)/META-INF/MANIFEST.MF"
-
+	@printf "\033[1;32m***** Compiling Successful *****\033[0m\n"
 
 .PHONY: build
 
-# Дополнительные переменные
 WEBAPP_DIR := $(src_main_webapp)
 WEB_XML := $(WEBAPP_DIR)/WEB-INF/web.xml
 TMP_WAR_DIR := $(dir_build)/war_temp
 
 build: compile
-	@echo "Building WAR file: $(file_war)"
-	@# Гарантируем существование целевой директории
+	@printf "\033[1;32m***** Building WAR: $(file_war) *****\033[0m\n"
 	@mkdir -p "$(dir_build)"
 	@mkdir -p "$(TMP_WAR_DIR)"
 
-	# 1. Копируем содержимое webapp (исключая WEB-INF/web.xml)
 	@if [ -d "$(WEBAPP_DIR)" ]; then \
 		echo "Copying webapp resources..."; \
 		find "$(WEBAPP_DIR)" -type f ! -path "$(WEBAPP_DIR)/WEB-INF/web.xml" | while read -r file; do \
@@ -149,7 +147,6 @@ build: compile
 		echo "Warning: Webapp directory not found: $(WEBAPP_DIR)"; \
 	fi
 
-	# 2. Копируем web.xml отдельно (если существует)
 	@if [ -f "$(WEB_XML)" ]; then \
 		echo "Copying web.xml..."; \
 		mkdir -p "$(TMP_WAR_DIR)/WEB-INF"; \
@@ -158,7 +155,6 @@ build: compile
 		echo "Warning: web.xml not found at $(WEB_XML)"; \
 	fi
 
-	# 3. Копируем библиотеки (исключая .properties файлы)
 	@if [ -d "$(lib)" ]; then \
 		echo "Copying libraries..."; \
 		mkdir -p "$(TMP_WAR_DIR)/WEB-INF/lib"; \
@@ -167,7 +163,6 @@ build: compile
 		echo "Warning: Lib directory not found: $(lib)"; \
 	fi
 
-	# 4. Копируем классы (исключая package-info.class)
 	@if [ -d "$(dir_build_classes)" ]; then \
 		echo "Copying classes..."; \
 		mkdir -p "$(TMP_WAR_DIR)/WEB-INF/classes"; \
@@ -182,20 +177,18 @@ build: compile
 		exit 1; \
 	fi
 
-	# 5. Копируем META-INF
 	@if [ -d "$(dir_build_classes)/META-INF" ]; then \
 		echo "Copying META-INF..."; \
 		cp -R "$(dir_build_classes)/META-INF" "$(TMP_WAR_DIR)/"; \
 	fi
 
-	# 6. Создаем WAR-файл
 	@echo "Creating WAR file..."
 	@(cd "$(TMP_WAR_DIR)" && zip -qr "$(abspath $(file_war))" .)
 	@rm -rf "$(TMP_WAR_DIR)"
 	@echo "Successfully created WAR file at $(file_war)"
 
-	# 7. Вызываем цель music
 	@$(MAKE) music
+	@printf "\033[1;32m***** Building Successfully *****\033[0m\n"
 
 
 
@@ -203,7 +196,7 @@ build: compile
 .PHONY: clean
 
 clean:
-	@echo "Cleaning build directories..."
+	@printf "\033[1;32m***** Cleaning build directories *****\033[0m\n"
 	@if [ -d "ant" ]; then \
 		echo "Removing ant/ directory..."; \
 		rm -rf ant; \
@@ -218,8 +211,7 @@ clean:
 		echo "lib/ directory does not exist - nothing to remove"; \
 	fi
 
-	@echo "Clean complete"
-
+	@printf "\033[1;32m***** Clean complete *****\033[0m\n"
 
 .PHONY: music
 
@@ -253,15 +245,13 @@ endif
 .PHONY: doc
 
 doc:
-	@echo "Starting documentation tasks..."
+	@printf "\033[1;32m***** Starting documentation *****\033[0m\n"
 
-	# 1. Проверка существования WAR-файла
 	@if [ ! -f "$(file_war)" ]; then \
 		echo "Error: WAR file not found at $(file_war)"; \
 		exit 1; \
 	fi
 
-	# 2. Генерация MD5
 	@echo "Generating MD5 checksum..."
 	@if command -v md5sum >/dev/null; then \
 		war_md5=$$(md5sum "$(file_war)" | awk '{print $$1}'); \
@@ -273,7 +263,6 @@ doc:
 	fi; \
 	echo "MD5: $${war_md5}"
 
-	# 3. Генерация SHA-1
 	@echo "Generating SHA-1 checksum..."
 	@if command -v sha1sum >/dev/null; then \
 		war_sha1=$$(sha1sum "$(file_war)" | awk '{print $$1}'); \
@@ -285,7 +274,6 @@ doc:
 	fi; \
 	echo "SHA-1: $${war_sha1}"
 
-	# 4. Создание MANIFEST.MF с хешами
 	@echo "Creating MANIFEST.MF with checksums..."
 	@mkdir -p "$(dir_build)/META-INF"
 	@echo "Manifest-Version: 1.0.0" > "$(dir_build)/META-INF/MANIFEST.MF"
@@ -293,11 +281,9 @@ doc:
 	@echo "MD5: $${war_md5}" >> "$(dir_build)/META-INF/MANIFEST.MF"
 	@echo "SHA-1: $${war_sha1}" >> "$(dir_build)/META-INF/MANIFEST.MF"
 
-	# 5. Обновление WAR-файла новым MANIFEST.MF
 	@echo "Updating WAR file with MANIFEST.MF..."
 	@(cd "$(dir_build)/META-INF" && zip -qr "$(abspath $(file_war))" MANIFEST.MF)
 
-	# 6. Генерация Javadoc только для исходников проекта
 	@echo "Generating Javadoc..."
 	@mkdir -p "$(dir_build)/javadoc"
 	@if [ -d "$(src_main_java)" ]; then \
@@ -322,7 +308,6 @@ doc:
 		exit 1; \
 	fi
 
-	# 7. Добавление Javadoc в WAR-файл
 	@if [ -d "$(dir_build)/javadoc" ]; then \
 		echo "Adding Javadoc to WAR file..."; \
 		(cd "$(dir_build)/javadoc" && zip -qr "$(abspath $(file_war))" .); \
@@ -331,4 +316,5 @@ doc:
 		exit 1; \
 	fi
 
-	@echo "Documentation tasks completed successfully"
+	@printf "\033[1;32m***** Documentation tasks completed successfully *****\033[0m\n"
+
