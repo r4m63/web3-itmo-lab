@@ -252,34 +252,35 @@ doc:
 		exit 1; \
 	fi
 
-	@echo "Generating MD5 checksum..."
-	@if command -v md5sum >/dev/null; then \
-		war_md5=$$(md5sum "$(file_war)" | awk '{print $$1}'); \
-	elif command -v md5 >/dev/null; then \
-		war_md5=$$(md5 -q "$(file_war)"); \
-	else \
-		echo "Error: Neither md5sum nor md5 command found"; \
-		exit 1; \
-	fi; \
-	echo "MD5: $${war_md5}"
+	@echo "Generating checksums and writing MANIFEST.MF..."; \
+	mkdir -p "$(dir_build)/META-INF"; \
+	war_md5="$$( \
+		if command -v md5sum >/dev/null; then \
+			md5sum "$(file_war)" | awk '{print $$1}'; \
+		elif command -v md5 >/dev/null; then \
+			md5 -q "$(file_war)"; \
+		else \
+			echo "Error: Neither md5sum nor md5 found" >&2; \
+			exit 1; \
+		fi)"; \
+	war_sha1="$$( \
+		if command -v sha1sum >/dev/null; then \
+			sha1sum "$(file_war)" | awk '{print $$1}'; \
+		elif command -v shasum >/dev/null; then \
+			shasum -a 1 "$(file_war)" | awk '{print $$1}'; \
+		else \
+			echo "Error: Neither sha1sum nor shasum found" >&2; \
+			exit 1; \
+		fi)"; \
+	echo "MD5: $$war_md5"; \
+	echo "SHA-1: $$war_sha1"; \
+	{ \
+		echo "Manifest-Version: 1.0.0"; \
+		echo "Implementation-Version: 1.0.0"; \
+		echo "MD5: $$war_md5"; \
+		echo "SHA-1: $$war_sha1"; \
+	} > "$(dir_build)/META-INF/MANIFEST.MF"
 
-	@echo "Generating SHA-1 checksum..."
-	@if command -v sha1sum >/dev/null; then \
-		war_sha1=$$(sha1sum "$(file_war)" | awk '{print $$1}'); \
-	elif command -v shasum >/dev/null; then \
-		war_sha1=$$(shasum -a 1 "$(file_war)" | awk '{print $$1}'); \
-	else \
-		echo "Error: Neither sha1sum nor shasum command found"; \
-		exit 1; \
-	fi; \
-	echo "SHA-1: $${war_sha1}"
-
-	@echo "Creating MANIFEST.MF with checksums..."
-	@mkdir -p "$(dir_build)/META-INF"
-	@echo "Manifest-Version: 1.0.0" > "$(dir_build)/META-INF/MANIFEST.MF"
-	@echo "Implementation-Version: 1.0.0" >> "$(dir_build)/META-INF/MANIFEST.MF"
-	@echo "MD5: $${war_md5}" >> "$(dir_build)/META-INF/MANIFEST.MF"
-	@echo "SHA-1: $${war_sha1}" >> "$(dir_build)/META-INF/MANIFEST.MF"
 
 	@echo "Updating WAR file with MANIFEST.MF..."
 	@(cd "$(dir_build)/META-INF" && zip -qr "$(abspath $(file_war))" MANIFEST.MF)
