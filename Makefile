@@ -164,6 +164,32 @@ env:
 
 	@printf "\033[1;32m***** Environment setup completed successfully *****\033[0m\n"
 
+.PHONY: env-stop
+
+env-stop:
+	@echo "Checking WildFly installation..."
+	@if [ -d "$(wildfly_home)" ]; then \
+		echo "Stopping WildFly server..."; \
+		$(wildfly_home)/bin/jboss-cli.sh --connect command=:shutdown || true; \
+		echo "WildFly server stopped"; \
+	else \
+		echo "WildFly not found at $(wildfly_home), skipping..."; \
+	fi
+
+	@echo "Checking Docker installation..."
+	@if command -v docker-compose > /dev/null; then \
+		echo "Stopping Docker containers..."; \
+		docker-compose down || true; \
+		echo "Docker containers stopped and removed"; \
+	else \
+		echo "Docker not found, skipping..."; \
+	fi
+
+	@echo "Killing any remaining WildFly standalone.sh processes..."
+	@pkill -f standalone.sh || true
+
+
+
 
 .PHONY: test
 
