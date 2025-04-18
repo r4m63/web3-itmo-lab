@@ -1,5 +1,6 @@
 # ========== paths =========
 src_main_java := src/main/java
+
 # ========== environment =========
 java_version := 17
 java_home := /Users/ramiltadzheddinov/Library/Java/JavaVirtualMachines/corretto-17.0.14/Contents/Home
@@ -28,8 +29,6 @@ dir_build_resources := $(dir_build)/resources
 dir_build_test_reports := $(dir_build)/test-reports
 dir_build_test_classes := $(dir_build)/test-classes
 native_output_dir := $(dir_build_resources)/resources-native
-
-
 
 file_war := $(dir_build)/lab3.war
 
@@ -77,15 +76,6 @@ deps = \
   https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/2.0.9/slf4j-simple-2.0.9.jar \
   https://repo1.maven.org/maven2/jakarta/annotation/jakarta.annotation-api/2.1.0/jakarta.annotation-api-2.1.0.jar
 
-#test_lib_urls := \
-#  https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/$(junit_version)/junit-jupiter-api-$(junit_version).jar \
-#  https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-engine/$(junit_version)/junit-jupiter-engine-$(junit_version).jar \
-#  https://repo1.maven.org/maven2/org/junit/platform/junit-platform-commons/$(junit_platform_version)/junit-platform-commons-$(junit_platform_version).jar \
-#  https://repo1.maven.org/maven2/org/junit/platform/junit-platform-engine/$(junit_platform_version)/junit-platform-engine-$(junit_platform_version).jar \
-#  https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/$(junit_platform_version)/junit-platform-console-standalone-$(junit_platform_version).jar \
-#  https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar \
-#  https://repo1.maven.org/maven2/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar
-
 # ========== tests =========
 junit_version := 5.10.0
 junit_platform_version := 1.10.0
@@ -98,21 +88,16 @@ test_lib_urls := \
 # ========== classpath ==========
 test_classpath := $(addprefix $(lib)/,$(test_libs)):$(dir_build_classes):$(dir_build_test_classes)
 
-
-.PHONY: deploy
+.PHONY: scp history diff env env-stop test download-deps compile build clean music doc
 
 REMOTE_USER := NAME
 REMOTE_HOST := HOST
 REMOTE_DIR  := /path/on/server
 
-deploy:
+scp:
 	@echo "Deploying lab3.war to $(REMOTE_HOST)..."
 	scp gnu/build/lab3.war $(REMOTE_USER)@$(REMOTE_HOST):$(REMOTE_DIR)
 	@echo "Deployment complete."
-
-
-
-.PHONY: native2ascii
 
 native2ascii:
 	@echo "Converting localization files with native2ascii..."
@@ -136,11 +121,6 @@ native2ascii:
 	rsync -a --include='*.properties' --exclude='*' $(native_output_dir)/ $(dir_build_classes)/
 
 	@echo "Done."
-
-
-
-
-.PHONY: history
 
 build_success := false
 max_attempts := 2
@@ -175,15 +155,6 @@ history:
 		echo "No working revisions found in $(max_attempts) attempts!"; \
 		echo "Project cannot be compiled in any recent revision"; \
 	fi
-
-
-
-
-
-
-
-
-.PHONY: diff
 
 diff_critical_classes := server/DatabaseManager.java
 
@@ -221,9 +192,6 @@ diff:
 	fi
 
 	@printf "\033[1;34m***** Check completed *****\033[0m\n"
-
-
-.PHONY: env
 
 env:
 	@printf "\033[1;32m***** Setting up environment (WildFly + PostgreSQL) *****\033[0m\n"
@@ -290,14 +258,16 @@ env:
 
 	@printf "\033[1;32m***** Environment setup completed successfully *****\033[0m\n"
 
-.PHONY: env-stop
-
 env-stop:
 	@echo "Checking WildFly installation..."
 	@if [ -d "$(wildfly_home)" ]; then \
 		echo "Stopping WildFly server..."; \
 		$(wildfly_home)/bin/jboss-cli.sh --connect command=:shutdown || true; \
 		echo "WildFly server stopped"; \
+		\
+        		echo "Cleaning WildFly deployments directory..."; \
+        		rm -rf $(wildfly_home)/standalone/deployments/* || true; \
+        		echo "Deployments directory cleaned"; \
 	else \
 		echo "WildFly not found at $(wildfly_home), skipping..."; \
 	fi
@@ -313,12 +283,6 @@ env-stop:
 
 	@echo "Killing any remaining WildFly standalone.sh processes..."
 	@pkill -f standalone.sh || true
-
-
-
-
-.PHONY: test
-
 
 test:
 	@echo "Preparing to run tests..."
@@ -348,10 +312,6 @@ test:
 
 	@echo "✅ Test execution completed. Reports are in $(dir_build_test_reports)"
 
-
-
-
-.PHONY: download-deps
 download-deps:
 	@printf "\033[1;32m***** Downloading Dependencies *****\033[0m\n"
 	@mkdir -p $(lib)/temp
@@ -372,9 +332,8 @@ download-deps:
 
 	@printf "\033[1;32m***** Downloading Successful *****\033[0m\n"
 
-
-.PHONY: compile
 CLASSPATH := $(shell find $(lib) -name "*.jar" | tr '\n' ':')
+
 compile:
 	@printf "\033[1;32m***** Compiling Java Sources *****\033[0m\n"
 	@mkdir -p "$(dir_build_classes)"
@@ -406,8 +365,6 @@ compile:
 	@echo "Manifest-Version: 1.0.0" > "$(dir_build)/META-INF/MANIFEST.MF"
 	@echo "Implementation-Version: 1.0.0" >> "$(dir_build)/META-INF/MANIFEST.MF"
 	@printf "\033[1;32m***** Compiling Successful *****\033[0m\n"
-
-.PHONY: build
 
 WEBAPP_DIR := $(src_main_webapp)
 WEB_XML := $(WEBAPP_DIR)/WEB-INF/web.xml
@@ -473,11 +430,6 @@ build: compile
 	@$(MAKE) music
 	@printf "\033[1;32m***** Building Successfully *****\033[0m\n"
 
-
-
-
-.PHONY: clean
-
 clean:
 	@printf "\033[1;32m***** Cleaning build directories *****\033[0m\n"
 
@@ -507,13 +459,6 @@ clean:
 
 	@printf "\033[1;32m***** Clean complete *****\033[0m\n"
 
-
-
-
-
-.PHONY: music
-
-# Определяем ОС
 UNAME_S := $(shell uname -s)
 
 music:
@@ -537,10 +482,6 @@ else ifeq ($(OS),Windows_NT)
 else
 	@echo "Music playback not supported on this OS"
 endif
-
-
-
-.PHONY: doc
 
 doc:
 	@printf "\033[1;32m***** Starting documentation *****\033[0m\n"
@@ -616,4 +557,3 @@ doc:
 	fi
 
 	@printf "\033[1;32m***** Documentation tasks completed successfully *****\033[0m\n"
-
