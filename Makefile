@@ -97,6 +97,47 @@ test_lib_urls := \
 test_classpath := $(addprefix $(lib)/,$(test_libs)):$(dir_build_classes):$(dir_build_test_classes)
 
 
+
+.PHONY: diff
+
+diff_critical_classes := server/DatabaseManager.java
+
+diff:
+	@printf "\033[1;34m***** Checking git changes *****\033[0m\n"
+
+	@changed_files=$$(git diff --name-only HEAD | grep -v '.DS_Store'); \
+	echo "Changed files (excluding .DS_Store):"; \
+	echo "$$changed_files" | sed 's/^/  /';
+
+	@critical_changes="false"; \
+	if [ -n "$$changed_files" ]; then \
+		for critical_class in $(diff_critical_classes); do \
+			if echo "$$changed_files" | grep -q "$$critical_class"; then \
+				printf "\033[1;31mChanges affect critical class: $$critical_class. Commit skipped.\033[0m\n"; \
+				critical_changes="true"; \
+				break; \
+			fi; \
+		done; \
+	fi; \
+
+	@if [ "$$critical_changes" = "false" ]; then \
+		if [ -n "$$changed_files" ]; then \
+			printf "\033[1;32mNo critical changes detected. Performing commit...\033[0m\n"; \
+			commit_time=$$(date "+%Y-%m-%d %H:%M:%S"); \
+			if ! git commit -a -m "Auto-commit at $$commit_time"; then \
+				printf "\033[1;31mCommit failed\033[0m\n"; \
+				exit 1; \
+			fi; \
+		else \
+			printf "\033[1;33mNo changes to commit (after filtering .DS_Store).\033[0m\n"; \
+		fi; \
+	else \
+		printf "\033[1;35mSkipping commit due to critical changes.\033[0m\n"; \
+	fi
+
+	@printf "\033[1;34m***** Check completed *****\033[0m\n"
+
+
 .PHONY: env
 
 env:
