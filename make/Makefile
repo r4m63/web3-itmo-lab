@@ -94,6 +94,26 @@ REMOTE_USER := NAME
 REMOTE_HOST := HOST
 REMOTE_DIR  := /path/on/server
 
+download-deps:
+	@printf "\033[1;32m***** Downloading Dependencies *****\033[0m\n"
+	@mkdir -p $(lib)/temp
+	@for url in $(deps); do \
+	  echo "Downloading: $$url"; \
+	  curl -L --retry 3 --fail -O -J -s "$$url" --output-dir $(lib)/temp; \
+	done
+	@cp $(lib)/temp/* $(lib)/
+	@rm -rf $(lib)/temp
+
+	@mkdir -p $(lib)/temp
+	@for url in $(test_lib_urls); do \
+	  echo "Downloading: $$url"; \
+	  curl -L --retry 3 --fail -s -o $(lib)/temp/$$(basename $$url) "$$url"; \
+	done
+	@cp $(lib)/temp/* $(lib)/
+	@rm -rf $(lib)/temp
+
+	@printf "\033[1;32m***** Downloading Successful *****\033[0m\n"
+
 scp:
 	@echo "Deploying lab3.war to $(REMOTE_HOST)..."
 	scp gnu/build/lab3.war $(REMOTE_USER)@$(REMOTE_HOST):$(REMOTE_DIR)
@@ -311,26 +331,6 @@ test:
 		|| { echo "Some tests failed"; exit 1; }
 
 	@echo "✅ Test execution completed. Reports are in $(dir_build_test_reports)"
-
-download-deps:
-	@printf "\033[1;32m***** Downloading Dependencies *****\033[0m\n"
-	@mkdir -p $(lib)/temp
-	@for url in $(deps); do \
-	  echo "Downloading: $$url"; \
-	  curl -L --retry 3 --fail -O -J -s "$$url" --output-dir $(lib)/temp; \
-	done
-	@cp $(lib)/temp/* $(lib)/
-	@rm -rf $(lib)/temp
-
-	@mkdir -p $(lib)/temp
-	@for url in $(test_lib_urls); do \
-	  echo "Downloading: $$url"; \
-	  curl -L --retry 3 --fail -s -o $(lib)/temp/$$(basename $$url) "$$url"; \
-	done
-	@cp $(lib)/temp/* $(lib)/
-	@rm -rf $(lib)/temp
-
-	@printf "\033[1;32m***** Downloading Successful *****\033[0m\n"
 
 CLASSPATH := $(shell find $(lib) -name "*.jar" | tr '\n' ':')
 
