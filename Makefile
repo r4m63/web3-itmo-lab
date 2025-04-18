@@ -27,6 +27,8 @@ dir_build_classes := $(dir_build)/classes
 dir_build_resources := $(dir_build)/resources
 dir_build_test_reports := $(dir_build)/test-reports
 dir_build_test_classes := $(dir_build)/test-classes
+native_output_dir := $(dir_build_resources)/resources-native
+
 
 
 file_war := $(dir_build)/lab3.war
@@ -95,6 +97,46 @@ test_lib_urls := \
 
 # ========== classpath ==========
 test_classpath := $(addprefix $(lib)/,$(test_libs)):$(dir_build_classes):$(dir_build_test_classes)
+
+
+.PHONY: deploy
+
+REMOTE_USER := NAME
+REMOTE_HOST := HOST
+REMOTE_DIR  := /path/on/server
+
+deploy:
+	@echo "Deploying lab3.war to $(REMOTE_HOST)..."
+	scp gnu/build/lab3.war $(REMOTE_USER)@$(REMOTE_HOST):$(REMOTE_DIR)
+	@echo "Deployment complete."
+
+
+
+.PHONY: native2ascii
+
+native2ascii:
+	@echo "Converting localization files with native2ascii..."
+
+	# Удалить старую директорию
+	rm -rf $(native_output_dir)
+
+	# Создать новую директорию
+	mkdir -p $(native_output_dir)
+
+	# Конвертировать все .properties файлы
+	find $(src_main_resources) -name '*.properties' | while read file; do \
+		rel_path=$$(realpath --relative-to=$(src_main_resources) $$file); \
+		dest_file=$(native_output_dir)/$$rel_path; \
+		mkdir -p $$(dirname $$dest_file); \
+		native2ascii -encoding ISO-8859-1 "$$file" "$$dest_file"; \
+	done
+
+	# Копировать конвертированные .properties в classes
+	@echo "Copying converted properties to $(dir_build_classes)..."
+	rsync -a --include='*.properties' --exclude='*' $(native_output_dir)/ $(dir_build_classes)/
+
+	@echo "Done."
+
 
 
 
