@@ -98,6 +98,49 @@ test_classpath := $(addprefix $(lib)/,$(test_libs)):$(dir_build_classes):$(dir_b
 
 
 
+.PHONY: history
+
+build_success := false
+max_attempts := 2
+history_file := $(dir_build)/history_diff.txt
+
+history:
+	@echo "Starting historical build search..."
+	@mkdir -p $(dir_build)
+	@rm -f $(history_file)
+	@touch $(history_file)
+
+	@build_success=false; \
+	for attempt in `seq 1 $(max_attempts)`; do \
+		if [ "$$build_success" = "false" ]; then \
+			echo "Attempt $$attempt: Trying to compile..."; \
+			if ! $(MAKE) compile; then \
+				echo "Compilation failed in attempt $$attempt"; \
+				echo "Resetting to previous commit..."; \
+				git reset --hard HEAD~1; \
+			else \
+				build_success=true; \
+				echo "Successful build found!"; \
+				current_revision=`git rev-parse HEAD`; \
+				git show "$$current_revision~1..$$current_revision" > $(history_file); \
+				echo "Diff saved to $(history_file)"; \
+			fi; \
+		else \
+			echo "Build already succeeded - skipping remaining attempts"; \
+		fi; \
+	done; \
+	if [ "$$build_success" = "false" ]; then \
+		echo "No working revisions found in $(max_attempts) attempts!"; \
+		echo "Project cannot be compiled in any recent revision"; \
+	fi
+
+
+
+
+
+
+
+
 .PHONY: diff
 
 diff_critical_classes := server/DatabaseManager.java
