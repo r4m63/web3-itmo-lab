@@ -1,7 +1,5 @@
-# ========== paths =========
 src_main_java := src/main/java
 
-# ========== environment =========
 java_version := 17
 java_home := /Users/ramiltadzheddinov/Library/Java/JavaVirtualMachines/corretto-17.0.14/Contents/Home
 javac_executable := $(java_home)/bin/javac
@@ -13,7 +11,6 @@ wildfly_deployment := $(wildfly_home)/standalone/deployments
 project_name := lab3
 war_file := gnu/build/lab3.war
 
-# ========== paths =========
 src_main_java := src/main/java
 src_main_resources := src/main/resources
 src_main_webapp := src/main/webapp
@@ -32,7 +29,6 @@ native_output_dir := $(dir_build_resources)/resources-native
 
 file_war := $(dir_build)/lab3.war
 
-# ========== alternatives =========
 dir_build_alt := $(dir_build)/alt
 dir_build_alt_src := $(dir_build_alt)/src
 dir_build_alt_web := $(dir_build_alt)/web
@@ -42,15 +38,12 @@ file_alt_war := $(dir_build_alt)/alt-lab3.war
 replace_regex_oldName := AreaBean
 replace_regex_newName := AltAreaBean
 
-# ========== project =========
 name_project := lab3
 name_project_bin := lab3.war
 
-# ========== resources =========
 file_music := music/mc.ogg
 diff_critical_classes := server/DatabaseManager.java
 
-# ========== dependencies =========
 deps = \
   https://repo1.maven.org/maven2/jakarta/platform/jakarta.jakartaee-web-api/9.0.0/jakarta.jakartaee-web-api-9.0.0.jar \
   https://repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.13.0/antlr4-runtime-4.13.0.jar \
@@ -76,16 +69,13 @@ deps = \
   https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/2.0.9/slf4j-simple-2.0.9.jar \
   https://repo1.maven.org/maven2/jakarta/annotation/jakarta.annotation-api/2.1.0/jakarta.annotation-api-2.1.0.jar
 
-# ========== tests =========
 junit_version := 5.10.0
 junit_platform_version := 1.10.0
 
-# ========== зависимости тестов ==========
 test_libs := junit-platform-console-standalone-$(junit_platform_version).jar
 test_lib_urls := \
   https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/$(junit_platform_version)/junit-platform-console-standalone-$(junit_platform_version).jar
 
-# ========== classpath ==========
 test_classpath := $(addprefix $(lib)/,$(test_libs)):$(dir_build_classes):$(dir_build_test_classes)
 
 .PHONY: scp history diff env env-stop test download-deps compile build clean music doc
