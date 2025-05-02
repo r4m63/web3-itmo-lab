@@ -7,6 +7,7 @@ import jakarta.inject.Named;
 import lombok.Getter;
 import lombok.Setter;
 import server.DatabaseManager;
+import server.mbeans.PointStatistics;
 import server.models.Point;
 
 import java.io.Serializable;
@@ -23,6 +24,9 @@ public class AreaBean implements Serializable {
     @Inject
     private DatabaseManager db;
 
+    @Inject
+    private PointStatistics pointStatistics;
+
     private double x;
     private double y;
     private double r;
@@ -32,7 +36,7 @@ public class AreaBean implements Serializable {
     private List<Point> points;
 
     @PostConstruct
-    public void init() { // вызов | объект создан + все зависимости
+    public void init() {
         x = 0;
         y = 0;
         r = 5;
@@ -47,6 +51,9 @@ public class AreaBean implements Serializable {
         Point point = new Point(x, y, r, hit);
         points.add(point);
         db.addPoint(point);
+
+        pointStatistics.addPoint(hit); // MBean
+
         return null;
     }
 
