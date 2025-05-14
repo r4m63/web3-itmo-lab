@@ -7,10 +7,14 @@ import jakarta.inject.Named;
 import lombok.Getter;
 import lombok.Setter;
 import server.DatabaseManager;
-import server.mbeans.PointStatistics;
+import server.mbean.MissRatio;
+import server.mbean.ShotStats;
 import server.models.Point;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -24,9 +28,6 @@ public class AreaBean implements Serializable {
     @Inject
     private DatabaseManager db;
 
-    @Inject
-    private PointStatistics pointStatistics;
-
     private double x;
     private double y;
     private double r;
@@ -35,15 +36,39 @@ public class AreaBean implements Serializable {
     private List<Integer> XValues = Arrays.asList(-3, -2, -1, 0, 1, 2, 3, 4, 5);
     private List<Point> points;
 
+    // Ссылки на MBean'ы
+    private transient ShotStats shotStats;
+
     @PostConstruct
     public void init() {
         x = 0;
         y = 0;
         r = 5;
+
         if (points == null) {
             points = new ArrayList<>();
         }
         points = db.getPoints();
+
+        // Регистрация MBeans
+        try {
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+
+            shotStats = new ShotStats();
+            MissRatio missRatio = new MissRatio(shotStats);
+
+            ObjectName shotStatsName = new ObjectName("ru.ackey:type=ShotStats");
+            ObjectName missRatioName = new ObjectName("ru.ackey:type=MissRatio");
+
+            if (!mbs.isRegistered(shotStatsName)) {
+                mbs.registerMBean(shotStats, shotStatsName);
+            }
+            if (!mbs.isRegistered(missRatioName)) {
+                mbs.registerMBean(missRatio, missRatioName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public String submit() {
@@ -52,7 +77,9 @@ public class AreaBean implements Serializable {
         points.add(point);
         db.addPoint(point);
 
-        pointStatistics.addPoint(hit); // MBean
+        if (shotStats != null) {
+            shotStats.registerShot(hit);
+        }
 
         return null;
     }
