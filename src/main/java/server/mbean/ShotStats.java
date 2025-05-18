@@ -41,5 +41,13 @@ public class ShotStats extends NotificationBroadcasterSupport implements ShotSta
     public int getMisses() {
         return misses.get();
     }
+
+    /**
+     * Количество попаданий (hits) = всего выстрелов минус промахи.
+     */
+    @Override
+    public int getHits() {
+        return totalShots.get() - misses.get();
+    }
 }
 

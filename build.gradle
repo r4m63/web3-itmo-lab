@@ -27,6 +27,16 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    // JUnit 5
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
+
+    // Mockito core для мокирования
+    testImplementation 'org.mockito:mockito-core:5.6.0'
+
+    // (опционально) интеграция Mockito с JUnit 5
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.6.0'
 }
 
 test {

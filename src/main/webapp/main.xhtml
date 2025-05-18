@@ -33,12 +33,16 @@
                                     M 250 250
                                     L #{250 + areaCheck.r * 40} 250
                                     A #{40 * areaCheck.r} #{40 * areaCheck.r} 0 0 0 #{250} #{250 - areaCheck.r * 40}"/>
-                <ui:repeat value="#{areaCheck.points}" var="point">
-                    <circle r="5"
-                            cx="#{point.x * 40 + 250}"
-                            cy="#{- point.y * 40 + 250}"
-                            fill="#{point.hit ? 'green' : 'red'}"/>
-                </ui:repeat>
+<!--                <ui:repeat value="#{areaCheck.points}" var="point">-->
+<!--                    <circle r="5"-->
+<!--                            cx="#{point.x * 40 + 250}"-->
+<!--                            cy="#{- point.y * 40 + 250}"-->
+<!--                            fill="#{point.hit ? 'green' : 'red'}"/>-->
+<!--                </ui:repeat>-->
+                <ui:fragment rendered="#{not empty areaCheck.svgPoints}">
+                    <h:outputText value="#{areaCheck.svgPoints}" escape="false"/>
+                </ui:fragment>
+
                 <!--X line-->
                 <line x1="0" y1="250" x2="500" y2="250" stroke="#FFFFFF"/>
                 <!--Y line-->

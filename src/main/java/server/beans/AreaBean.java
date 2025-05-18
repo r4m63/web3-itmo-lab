@@ -94,4 +94,17 @@ public class AreaBean implements Serializable {
         if (x * x + y * y <= r * r && x >= 0 && y >= 0) return true;
         return x <= 0 && y <= 0 && x >= -r / 2 && y >= -r;
     }
+
+    // optimization
+    public String getSvgPoints() {
+        StringBuilder sb = new StringBuilder();
+        for (Point point : points) {
+            int cx = (int)(point.getX() * 40 + 250);
+            int cy = (int)(-point.getY() * 40 + 250);
+            String color = point.isHit() ? "green" : "red";
+            sb.append(String.format("<circle r=\"5\" cx=\"%d\" cy=\"%d\" fill=\"%s\"/>", cx, cy, color));
+        }
+        return sb.toString();
+    }
+
 }
