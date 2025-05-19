@@ -22,15 +22,12 @@ class AreaBeanTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Подменяем DatabaseManager и очищаем MBeanServer от наших имён
         db = mock(DatabaseManager.class);
-        // Вернём пустой список при init
         when(db.getPoints()).thenReturn(new ArrayList<>());
 
         bean = new AreaBean();
         bean.setDb(db);
 
-        // Удаляем зарегистрированные MBeans от прошлых запусков
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         for (String type : new String[]{"ShotStats", "MissRatio"}) {
             ObjectName name = new ObjectName("ru.ackey:type=" + type);
@@ -40,6 +37,7 @@ class AreaBeanTest {
         }
 
         bean.init();
+        bean.getPoints().clear();
     }
 
     @Test
@@ -47,7 +45,6 @@ class AreaBeanTest {
         assertEquals(0, bean.getX());
         assertEquals(0, bean.getY());
         assertEquals(5, bean.getR());
-        // После init points = getPoints()
         verify(db).getPoints();
         assertNotNull(bean.getPoints());
         assertTrue(bean.getPoints().isEmpty());
@@ -56,15 +53,13 @@ class AreaBeanTest {
 
     @Test
     void testSubmitRegistersHitAndStoresPoint() {
-        // Зададим параметры, которые попадают в первую ветку checkHit
         bean.setX(-1);
         bean.setY(1);
         bean.setR(5);
 
         String result = bean.submit();
-        assertNull(result, "submit() всегда возвращает null");
+        assertNull(result);
 
-        // Проверяем, что в points появился новый Point
         List<Point> pts = bean.getPoints();
         assertEquals(1, pts.size());
         Point p = pts.get(0);
@@ -73,12 +68,10 @@ class AreaBeanTest {
         assertEquals(5, p.getR());
         assertTrue(p.isHit());
 
-        // Проверяем, что в БД добавили ту же точку
         ArgumentCaptor<Point> cap = ArgumentCaptor.forClass(Point.class);
         verify(db).addPoint(cap.capture());
         assertEquals(p, cap.getValue());
 
-        // Проверяем, что в shotStats зарегистрирован выстрел
         ShotStats stats = bean.getShotStats();
         assertEquals(1, stats.getTotalShots());
         assertEquals(1, stats.getHits());
@@ -86,7 +79,6 @@ class AreaBeanTest {
 
     @Test
     void testSubmitRegistersMissAndStoresPoint() {
-        // Зададим параметры промаха (например, x=5,y=5 вне круга r=5)
         bean.setX(5);
         bean.setY(5);
         bean.setR(5);
@@ -101,7 +93,6 @@ class AreaBeanTest {
 
     @Test
     void testClear() {
-        // Подготовим ненулевой список
         bean.getPoints().add(new Point(0, 0, 1, true));
         bean.clear();
         assertTrue(bean.getPoints().isEmpty());
@@ -109,43 +100,155 @@ class AreaBeanTest {
     }
 
     @Test
-    void testCheckHitRegions() {
-        bean.setR(2);
-        // Верхняя левая область
-        bean.setX(-1);
-        bean.setY(0.4);
-        assertTrue(bean.submit() == null && bean.getPoints().get(bean.getPoints().size() - 1).isHit());
-
-        // Круг в первой четверти
-        bean.getPoints().clear();
-        bean.setX(1);
-        bean.setY(1);
-        assertTrue(bean.submit() == null && bean.getPoints().get(0).isHit());
-
-        // Нижняя левая область
-        bean.getPoints().clear();
-        bean.setX(-0.5);
-        bean.setY(-1);
-        assertTrue(bean.submit() == null && bean.getPoints().get(0).isHit());
-
-        // Промах
-        bean.getPoints().clear();
-        bean.setX(2);
-        bean.setY(-2);
-        bean.submit();
-        assertFalse(bean.getPoints().get(0).isHit());
-    }
-
-    @Test
     void testGetSvgPoints() {
-        bean.getPoints().clear();
-        // Добавим два разных
         bean.getPoints().add(new Point(1, 1, 5, true));
         bean.getPoints().add(new Point(-1, -1, 5, false));
         String svg = bean.getSvgPoints();
-        // Проверим, что для hit и miss цвета разные и координаты считаются верно
         assertTrue(svg.contains("fill=\"green\""));
         assertTrue(svg.contains("fill=\"red\""));
-        assertTrue(svg.contains("cx=\"290\"") && svg.contains("cy=\"210\""));  // 1*40+250, -1*40+250 = 210
+        assertTrue(svg.contains("cx=\"290\"") && svg.contains("cy=\"210\""));
+    }
+
+    //=== Detailed coverage of checkHit() ===//
+
+    // 1. Upper-left triangular region: x ≤ 0, y ≥ 0, y ≤ 0.5 * x + r/2
+
+    @Test
+    void region1_strictlyInside() {
+        bean.setR(5);
+        bean.setX(-4);
+        bean.setY(0.5);
+        bean.submit();
+        assertTrue(lastPoint().isHit());
+    }
+
+    @Test
+    void region1_onBoundary() {
+        bean.setR(8);
+        bean.setX(-6);
+        bean.setY(1); // 0.5 * (-6) + 4 = 1
+        bean.submit();
+        assertTrue(lastPoint().isHit());
+    }
+
+    @Test
+    void region1_justOutside() {
+        bean.setR(5);
+        bean.setX(-4);
+        bean.setY(0.6);
+        bean.submit();
+        assertFalse(lastPoint().isHit());
+    }
+
+    // 2. Quarter-circle in 1st quadrant: x ≥ 0, y ≥ 0, x^2 + y^2 ≤ r^2
+
+    @Test
+    void region2_strictlyInside() {
+        bean.setR(10);
+        bean.setX(6);
+        bean.setY(8); // 6^2 + 8^2 = 100 = 10^2
+        bean.submit();
+        assertTrue(lastPoint().isHit());
+    }
+
+    @Test
+    void region2_onCircleBoundary() {
+        bean.setR(5);
+        bean.setX(3);
+        bean.setY(4); // 3^2 + 4^2 = 25 = 5^2
+        bean.submit();
+        assertTrue(lastPoint().isHit());
+    }
+
+    @Test
+    void region2_justOutsideCircle() {
+        bean.setR(5);
+        bean.setX(3);
+        bean.setY(4.1);
+        bean.submit();
+        assertFalse(lastPoint().isHit());
+    }
+
+    @Test
+    void region2_negativeY_miss() {
+        bean.setR(5);
+        bean.setX(2);
+        bean.setY(-1);
+        bean.submit();
+        assertFalse(lastPoint().isHit());
+    }
+
+    // 3. Lower-left rectangular region: x ≤ 0, y ≤ 0, x ≥ -r/2, y ≥ -r
+
+    @Test
+    void region3_strictlyInside() {
+        bean.setR(6);
+        bean.setX(-3);
+        bean.setY(-4);
+        bean.submit();
+        assertTrue(lastPoint().isHit());
+    }
+
+    @Test
+    void region3_onBoundaryX() {
+        bean.setR(8);
+        bean.setX(-4); // -r/2 = -4
+        bean.setY(-2);
+        bean.submit();
+        assertTrue(lastPoint().isHit());
+    }
+
+    @Test
+    void region3_onBoundaryY() {
+        bean.setR(8);
+        bean.setX(-2);
+        bean.setY(-8); // y = -r
+        bean.submit();
+        assertTrue(lastPoint().isHit());
+    }
+
+    @Test
+    void region3_justOutsideX() {
+        bean.setR(6);
+        bean.setX(-3.1);
+        bean.setY(-1);
+        bean.submit();
+        assertFalse(lastPoint().isHit());
+    }
+
+    @Test
+    void region3_justOutsideY() {
+        bean.setR(6);
+        bean.setX(-1);
+        bean.setY(-6.1);
+        bean.submit();
+        assertFalse(lastPoint().isHit());
+    }
+
+    // 4. Generic misses outside all regions
+
+    @Test
+    void generic_miss_positiveQuadrantOutsideCircle() {
+        bean.setR(5);
+        bean.setX(4);
+        bean.setY(4);
+        bean.submit();
+        assertFalse(lastPoint().isHit());
+    }
+
+    @Test
+    void generic_miss_mixedQuadrants() {
+        bean.setR(5);
+        bean.setX(1);
+        bean.setY(-2);
+        bean.submit();
+        assertFalse(lastPoint().isHit());
+    }
+
+    // Helper to fetch last point
+    private Point lastPoint() {
+        List<Point> pts = bean.getPoints();
+        assertFalse(pts.isEmpty(), "No points recorded");
+        return pts.get(pts.size() - 1);
     }
 }
